@@ -838,4 +838,287 @@ public class DEXParser {
 		return DEXParser.arithmaticalOp.contains(operator);
 	}
 	
+	public static List<List<String>> getRegisterAccess(StaticStmt s)
+	{
+		List<List<String>> result = new ArrayList<List<String>>();
+		List<String> read = new ArrayList<String>();
+		List<String> write = new ArrayList<String>();
+		
+		String stmt = s.getSmaliStmt();
+		/** first find the bytecode instruction index */
+		int stmtIndex = getBytecodeOpIndex(s.getBytecodeOperator());
+		/**	move vA, vB	*/
+		if (stmtIndex >= 1 && stmtIndex <= 9)
+		{
+			String vA = stmt.substring(stmt.indexOf(" ")+1, stmt.indexOf(", "));
+			String vB = stmt.substring(stmt.indexOf(", ")+2);
+			read.add(vB);
+			write.add(vA);
+		}
+		/** move-result vA */
+		else if (stmtIndex >= 10 && stmtIndex <= 12)
+		{
+			String vA = stmt.substring(stmt.indexOf(" ")+1);
+			read.add(vA);
+		}
+		/** return variable */
+		else if (stmtIndex > 14 && stmtIndex <= 17)
+		{
+			String vA = stmt.substring(stmt.indexOf(" ")+1);
+			read.add(vA);
+			if (s.getBytecodeOperator().contains("wide")
+					|| s.getBytecodeOperator().contains("object"))
+			{
+				int vAIndex = Integer.parseInt(vA.substring(1));
+				read.add(vA.substring(0, 1) + (vAIndex+1));
+			}
+		}
+		/**	const	*/
+		else if (stmtIndex >= 18 && stmtIndex <= 21)
+		{
+			String vA = stmt.substring(stmt.indexOf(" ")+1, stmt.indexOf(", "));
+			write.add(vA);
+		}
+		/**	const-wide	*/
+		else if (stmtIndex >= 22 && stmtIndex <= 25)
+		{	// this is for wide(64 bit) const
+			String vA = stmt.substring(stmt.indexOf(" ")+1, stmt.indexOf(", "));
+			int vAIndex = Integer.parseInt(vA.replace("v", ""));
+			write.add(vA);
+			write.add("v" + (vAIndex+1));
+		}
+		/**	const-string, const-class	*/
+		else if (stmtIndex >= 26 && stmtIndex <= 28)
+		{
+			String vA = stmt.substring(stmt.indexOf(" ")+1, stmt.indexOf(", "));
+			write.add(vA);
+		}
+		/** instance-of vA, vB, type@CCCC */
+		else if (stmtIndex == 32)
+		{
+			String vs[] = stmt.substring(stmt.indexOf(" " )+1).split(", ");
+			String vA = vs[0];
+			String vB = vs[1];
+			read.add(vB);
+			write.add(vA);
+		}
+		/** array-length vA, vB */
+		else if (stmtIndex == 33)
+		{
+			String vA = stmt.substring(stmt.indexOf(" ")+1, stmt.indexOf(", "));
+			String vB = stmt.substring(stmt.indexOf(", ")+2);
+			read.add(vB);
+			write.add(vA);
+		}
+		/** new-instance vA, type@BBBB */
+		else if (stmtIndex == 34)
+		{
+			String vA = stmt.substring(stmt.indexOf(" ")+1, stmt.indexOf(", "));
+			write.add(vA);
+		}
+		/** new-array vA, vB, type@CCCC */
+		else if (stmtIndex == 35)
+		{
+			String vs[] = stmt.substring(stmt.indexOf(" " )+1).split(", ");
+			String vA = vs[0];
+			String vB = vs[1];
+			read.add(vB);
+			write.add(vA);
+		}
+		/** filled-new-array(/range) {vC,vD,vE,vF,vG}, type@BBBB */
+		else if (stmtIndex == 36 || stmtIndex == 37)
+		{
+			String elements = stmt.substring(stmt.indexOf("{")+1, stmt.indexOf("}"));
+			if (elements.contains(", "))
+			{
+				read.addAll(Arrays.asList(elements.split(", ")));
+			}
+			else
+			{
+				read.add(elements);
+			}
+		}
+		/** fill-array-data vAA, :array_0 */
+		else if (stmtIndex == 38)
+		{
+			String vA = stmt.substring(stmt.indexOf(" ")+1, stmt.indexOf(", "));
+			write.add(vA);
+		}
+		/** throw vAA - no action needed*/
+		else if (stmtIndex == 39)
+		{
+			String vA = stmt.substring(stmt.indexOf(" ")+1);
+			read.add(vA);
+		}
+		/** packed/sparse switch */
+		else if (stmtIndex == 43 || stmtIndex == 44)
+		{
+			String vA = stmt.substring(stmt.indexOf(" ")+1, stmt.indexOf(", "));
+			read.add(vA);
+		}
+		/** cpmkind vAA, vBB, vCC	*/
+		else if (stmtIndex >= 45 && stmtIndex <= 49)
+		{
+			String vs[] = stmt.substring(stmt.indexOf(" ")+1).split(", ");
+			read.add(vs[1]);
+			read.add(vs[2]);
+			write.add(vs[0]);
+		}
+		/** if-test vA, vB, :cond_0 */
+		else if (stmtIndex >= 50 && stmtIndex <= 55)
+		{
+			String operator = stmt.substring(0, stmt.indexOf(" ")).split("-")[1];
+			String vs[] = stmt.substring(stmt.indexOf(" ")+1).split(", ");
+			String vA = vs[0];
+			String vB = vs[1];
+			read.add(vA);
+			read.add(vB);
+		}
+		/** ifz vA, :cond_0 */
+		else if (stmtIndex >= 56 && stmtIndex <= 61)
+		{
+			String operator = stmt.substring(0, stmt.indexOf(" ")).split("-")[1];
+			String vA = stmt.substring(stmt.indexOf(" ")+1, stmt.indexOf(", "));
+			read.add(vA);
+		}
+		/** aget vAA, vBB, vCC */
+		else if (stmtIndex >= 62 && stmtIndex <= 68)
+		{
+			String vs[] = stmt.substring(stmt.indexOf(" " )+1).split(", ");
+			String vA = vs[0];
+			String arrayName = vs[1];
+			String arrayIndex = vs[2];
+			read.add(arrayName);
+			read.add(arrayIndex);
+			write.add(vA);
+		}
+		/** aput vAA, vBB, vCC */
+		else if (stmtIndex >= 69 && stmtIndex <= 75)
+		{
+			String vs[] = stmt.substring(stmt.indexOf(" " )+1).split(", ");
+			String vA = vs[0];
+			String arrayName = vs[1];
+			String arrayIndex = vs[2];
+			read.add(vA);
+			read.add(arrayIndex);
+			write.add(arrayName);
+		}
+		/** iget vA, vB, field@CCCC */
+		else if (stmtIndex >= 76 && stmtIndex <= 82)
+		{
+			String vs[] = stmt.substring(stmt.indexOf(" " )+1).split(", ");
+			String vA = vs[0];
+			String vB = vs[1];
+			read.add(vB);
+			write.add(vA);
+		}
+		/** iput vA, vB, field@CCCC */
+		else if (stmtIndex >= 83 && stmtIndex <= 89)
+		{
+			String vs[] = stmt.substring(stmt.indexOf(" " )+1).split(", ");
+			String vA = vs[0];
+			String vB = vs[1];
+			read.add(vA);
+			write.add(vB);
+		}
+		/** sget vAA, field@BBBB */
+		else if (stmtIndex >= 90 && stmtIndex <= 96)
+		{
+			String vs[] = stmt.substring(stmt.indexOf(" " )+1).split(", ");
+			String vA = vs[0];
+			write.add(vA);
+		}
+		/** sput vAA, field@BBBB */
+		else if (stmtIndex >= 97 && stmtIndex <= 103)
+		{
+			String vs[] = stmt.substring(stmt.indexOf(" " )+1).split(", ");
+			String vA = vs[0];
+			read.add(vA);
+		}
+		/** invoke-kind {vC,vD,vE,vF,vG}, method@BBBB 
+		 * 	invoke-kind/range {vAAAA .. vNNNN}, method@MMMM
+		 * */
+		else if (stmtIndex >= 104 && stmtIndex <= 114)
+		{
+			//String invokeType = line.substring(0, line.indexOf(" "));
+			String params = stmt.substring(stmt.indexOf("{")+1, stmt.indexOf("}"));
+			if (params.contains(", "))
+			{
+				read.addAll(Arrays.asList(params.split(", ")));
+			}
+			else if (params.contains(" .. "))
+			{
+				String firstV = params.substring(0, params.indexOf(" .. "));
+				String lastV = params.substring(params.indexOf(" .. ")+4);
+				String prefix = firstV.substring(0, 1);
+				int first = Integer.parseInt(firstV.substring(1));
+				int last = Integer.parseInt(lastV.substring(1));
+				while (first <= last)
+				{
+					read.add(prefix + first);
+					first++;
+				}
+			}
+			else if (!params.equals(""))
+			{
+				read.add(params);
+			}
+		}
+		/** neg, not vA, vB */
+		else if (stmtIndex >= 115 && stmtIndex <= 120)
+		{
+			String vs[] = stmt.substring(stmt.indexOf(" " )+1).split(", ");
+			String vA = vs[0];
+			String vB = vs[1];
+			read.add(vB);
+			write.add(vA);
+		}
+		/** primitive type conversion */
+		else if (stmtIndex >= 121 && stmtIndex <= 135)
+		{
+			String vs[] = stmt.substring(stmt.indexOf(" " )+1).split(", ");
+			String vA = vs[0];
+			String vB = vs[1];
+			read.add(vB);
+			write.add(vA);
+		}
+		/** binop operation (3 addresses: a = b op c) */
+		else if (stmtIndex >= 136 && stmtIndex <= 167)
+		{
+			String vs[] = stmt.substring(stmt.indexOf(" " )+1).split(", ");
+			String vA = vs[0];
+			String vB = vs[1];
+			String vC = vs[2];
+			read.add(vB);
+			read.add(vC);
+			write.add(vA);
+		}
+		/** binop operation (2 addresses: a = a op b) */
+		else if (stmtIndex >= 168 && stmtIndex <= 199)
+		{
+			String vs[] = stmt.substring(stmt.indexOf(" " )+1).split(", ");
+			String vA = vs[0];
+			String vB = vs[1];
+			read.add(vA);
+			read.add(vB);
+			write.add(vA);
+		}
+		/** binop/lit# vA, vB, #+CCCC (int only) 
+	 	lit16 - 16 bit constant
+	 	lit8 - 8 bit constant
+		 */
+		else if (stmtIndex >= 200 && stmtIndex <= 218)
+		{
+			String operator = stmt.substring(0, stmt.indexOf("-"));
+			String vs[] = stmt.substring(stmt.indexOf(" " )+1).split(", ");
+			String vA = vs[0];
+			String vB = vs[1];
+			read.add(vB);
+			write.add(vA);
+		}
+		result.add(read);
+		result.add(write);
+		return result;
+	}
+	
 }

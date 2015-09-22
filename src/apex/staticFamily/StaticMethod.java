@@ -257,8 +257,26 @@ public class StaticMethod {
 			return "p1" + this.paramTypes.get(1);
 		}
 		
-		// Now we can't add new registers, and there is no parameter
-		// We have to do a simple symbolic execution.
+		// Now there are a lot of local registers, and 0 usable parameter registers
+		
+		// Some corners to cut
+		if (s.getStatementID() == 0)
+		{
+			return "v0";
+		}
+		else if (s.isReturnStmt() || s.isThrowStmt())
+		{
+			for (int i = 0; i < this.localRegisterCount; i++)
+			{
+				if (!s.getRegsToRead().contains("v"+i))
+				{
+					return "v"+i;
+				}
+			}
+		}
+		// Now we have branch statements, try block statements
+		// that are not the first statement of the method
+		// We have to do a simple symbolic execution
 		boolean finished = false;
 		StaticStmt currentStmt = s;
 		ArrayList<String> reg_read = new ArrayList<String>();
@@ -285,7 +303,6 @@ public class StaticMethod {
 			//	find the first register that isn't empty
 			//	get its name and type
 			//TODO API: get exec log from a given index, to an end index
-			//TODO API: given a statement, get the read and write of registers
 			//TODO API: given an exec log, do symbolic execution
 		}
 		

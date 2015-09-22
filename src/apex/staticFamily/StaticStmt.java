@@ -1,29 +1,29 @@
 package apex.staticFamily;
 
 import java.util.ArrayList;
+import java.util.List;
 
 import apex.parser.DEXParser;
 import apex.symbolic.Expression;
 
 public class StaticStmt {
 
-	
+	/**	basic or unparsed information	*/
 	private String smaliStmt = "";
-	
 	private StmtDebugInfo debugInfo = null;
-	
 	private int id;
-	
 	private StaticMethod containingMethod;
-	
 	private ArrayList<String> array_or_switch_data = new ArrayList<String>();
-	
 	private boolean isInTryBlock = false;
 	
+	/**	instrumentation related	*/
 	private ArrayList<String> instrumentedStmts_before = new ArrayList<String>();
 	private ArrayList<String> instrumentedStmts_after = new ArrayList<String>();
 	
+	/**	symbolic execution related	*/
 	private Expression ex;
+	private List<String> regsToRead = null;
+	private List<String> regsToWrite = null;
 	
 	public StaticStmt(String statement, int id, StaticMethod m)
 	{
@@ -199,6 +199,11 @@ public class StaticStmt {
 		return (this.getBytecodeOperator().endsWith("switch"));
 	}
 	
+	public boolean isGotoStmt()
+	{
+		return (this.getBytecodeOperator().equals("goto"));
+	}
+	
 	public boolean hasOriginalLineNumber()
 	{
 		return (this.debugInfo.getOriginalLineNumber() > 0);
@@ -216,6 +221,28 @@ public class StaticStmt {
 			this.ex = DEXParser.generateExpression(this).clone();
 		}
 		return this.ex;
+	}
+	
+	public List<String> getRegsToRead()
+	{
+		if (this.regsToRead == null)
+		{
+			List<List<String>> access = DEXParser.getRegisterAccess(this);
+			this.regsToRead = new ArrayList<String>(access.get(0));
+			this.regsToWrite = new ArrayList<String>(access.get(1));
+		}
+		return this.regsToRead;
+	}
+	
+	public List<String> getRegsToWrite()
+	{
+		if (this.regsToWrite == null)
+		{
+			List<List<String>> access = DEXParser.getRegisterAccess(this);
+			this.regsToRead = new ArrayList<String>(access.get(0));
+			this.regsToWrite = new ArrayList<String>(access.get(1));
+		}
+		return this.regsToWrite;
 	}
 
 }
