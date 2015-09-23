@@ -1,7 +1,6 @@
 package apex.symbolic;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.ArrayList;
 
 public class ToDoPath {
 
@@ -16,8 +15,8 @@ public class ToDoPath {
 	/**
 	 * members in exploring stage
 	 * */
-	Map<Integer, String> branchChoices = new HashMap<Integer, String>();
-	
+	int branchIndex = 0;
+	ArrayList<String> branchChoices = new ArrayList<String>();
 
 	
 	ToDoPath(int startingStmtID, int endingStmtID)
@@ -26,13 +25,52 @@ public class ToDoPath {
 		this.endingStmtID = endingStmtID;
 	}
 	
+	String getDirection(int stmtID)
+	{
+		if (branchIndex >= branchChoices.size())
+		{
+			for (String choice : branchChoices)
+			{
+				if (choice.startsWith("" + stmtID + ","))
+				{
+					// this means we have looped back to this if statement
+					String oldDirection = choice.split(",")[1];
+					if (oldDirection.equals("jump"))
+						return "forceFlow";
+					if (oldDirection.equals("flow"))
+						return "forceJump";
+				}
+			}
+			return "";
+		}
+		String branchChoice = this.branchChoices.get(branchIndex++);
+		if (!branchChoice.startsWith("" + stmtID + ","))
+		{
+			System.out.println("ToDoPath getDirection(I) is broken at stmt id " + stmtID);
+			System.out.println("got: " + branchChoice);
+			System.exit(1);
+		}
+		return branchChoice.split(",")[1];
+	}
 	
-	void print()
+	/**
+	 * return a new instance of ToDoPath which has the same
+	 * startingStmtID, endingStmtID, and a cloned version of
+	 * branchChoices. Everything else is the initial value
+	 * */
+	ToDoPath copy()
+	{
+		ToDoPath result = new ToDoPath(this.startingStmtID, this.endingStmtID);
+		result.branchChoices = new ArrayList<String>(this.branchChoices);
+		return result;
+	}
+	
+	public void print()
 	{
 		System.out.println("ToDoPath from stmt " + this.startingStmtID + " to " + this.endingStmtID);
-		for (Map.Entry<Integer, String> entry : branchChoices.entrySet())
+		for (String s : branchChoices)
 		{
-			System.out.println(" At stmt " + entry.getKey() + ", " + entry.getValue());
+			System.out.println(" " + s);
 		}
 	}
 }

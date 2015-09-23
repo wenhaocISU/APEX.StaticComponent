@@ -1,7 +1,9 @@
 package apex.staticFamily;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import apex.parser.DEXParser;
 import apex.symbolic.Expression;
@@ -243,6 +245,59 @@ public class StaticStmt {
 			this.regsToWrite = new ArrayList<String>(access.get(1));
 		}
 		return this.regsToWrite;
+	}
+	
+	public int getIfJumpTargetID()
+	{
+		if (!this.isIfStmt())
+			return -1;
+		String targetLabel = this.smaliStmt.substring(this.smaliStmt.indexOf(":"));
+		return this.containingMethod.getFirstStmtOfBlock(targetLabel).getStatementID();
+	}
+	
+	public int getGotoTargetID()
+	{
+		if (!this.isGotoStmt())
+			return -1;
+		String targetLabel = this.smaliStmt.substring(this.smaliStmt.indexOf(":"));
+		return this.containingMethod.getFirstStmtOfBlock(targetLabel).getStatementID();
+
+	}
+	
+	public Map<Integer, String> getSwitchMap()
+	{
+		Map<Integer, String> switchMap = new HashMap<Integer, String>();
+		if (this.getBytecodeOperator().equals("sparse-switch"))
+		{
+			for (String line : this.array_or_switch_data)
+			{
+				if (!line.contains(" -> "))
+					continue;
+				String link = line.trim();
+				String hexValue = link.substring(0, link.indexOf(" -> "));
+				String caseTargetLabel = link.substring(link.indexOf(" -> ")+4);
+				int decValue = Integer.parseInt(hexValue.replace("0x", ""), 16);
+				switchMap.put(decValue, caseTargetLabel);
+			}
+		}
+		else if (this.getBytecodeOperator().equals("packed-switch"))
+		{
+			int caseValue = 0;
+			for (int i = 0; i < this.array_or_switch_data.size(); i++)
+			{
+				String line = this.array_or_switch_data.get(i);
+				if (line.startsWith("    .packed-switch"))
+				{
+					String initValueString = line.substring(line.lastIndexOf(" ")+1).replace("0x", "");
+					caseValue = Integer.parseInt(initValueString, 16);
+				}
+				else if (line.startsWith("        :"))
+				{
+					switchMap.put(caseValue++, line.trim());
+				}
+			}
+		}
+		return switchMap;
 	}
 
 }

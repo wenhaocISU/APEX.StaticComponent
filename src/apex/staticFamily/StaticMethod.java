@@ -129,6 +129,7 @@ public class StaticMethod {
 			{
 				if (line.startsWith("    :array_"))
 				{
+					String label = line.trim();
 					ArrayList<String> chunk = new ArrayList<String>(debugInfo);
 					debugInfo.clear();
 					while (!line.equals("    .end array-data"))
@@ -138,7 +139,6 @@ public class StaticMethod {
 					}
 					chunk.add(line);
 					this.supplementalData.add(chunk);
-					String label = line.trim();
 					for (StaticStmt s : this.statements)
 					{
 						if (s.getSmaliStmt().endsWith(label))
@@ -150,6 +150,7 @@ public class StaticMethod {
 				}
 				else if (line.startsWith("    :pswitch_data_"))
 				{
+					String label = line.trim();
 					ArrayList<String> chunk = new ArrayList<String>(debugInfo);
 					debugInfo.clear();
 					while (!line.equals("    .end packed-switch"))
@@ -159,7 +160,7 @@ public class StaticMethod {
 					}
 					chunk.add(line);
 					this.supplementalData.add(chunk);
-					String label = line.trim();
+					
 					for (StaticStmt s : this.statements)
 					{
 						if (s.getSmaliStmt().endsWith(label))
@@ -171,6 +172,7 @@ public class StaticMethod {
 				}
 				else if (line.startsWith("    :sswitch_data_"))
 				{
+					String label = line.trim();
 					ArrayList<String> chunk = new ArrayList<String>(debugInfo);
 					debugInfo.clear();
 					while (!line.equals("    .end sparse-switch"))
@@ -180,7 +182,7 @@ public class StaticMethod {
 					}
 					chunk.add(line);
 					this.supplementalData.add(chunk);
-					String label = line.trim();
+					
 					for (StaticStmt s : this.statements)
 					{
 						if (s.getSmaliStmt().endsWith(label))
@@ -507,5 +509,20 @@ public class StaticMethod {
 		}
 		result.add(".end method");
 		return result;
+	}
+	
+	public StaticStmt getFirstStmtOfBlock(String blockLabel)
+	{
+		for (StaticStmt s : this.statements)
+		{
+			if (s.isFirstStmtOfBlock() && 
+					s.getBlockName().contains(blockLabel))
+			{
+				return s;
+			}
+		}
+		//TODO
+		System.out.println("nothing");
+		return null;
 	}
 }
