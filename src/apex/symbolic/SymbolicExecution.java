@@ -7,10 +7,12 @@ import java.util.Map;
 import apex.staticFamily.StaticApp;
 import apex.staticFamily.StaticMethod;
 import apex.staticFamily.StaticStmt;
+import apex.symbolic.context.SymbolicContext;
 
 public class SymbolicExecution {
 
 	private StaticApp staticApp;
+	public boolean debug = false;
 	
 	public SymbolicExecution(StaticApp staticApp)
 	{
@@ -19,13 +21,41 @@ public class SymbolicExecution {
 	
 	public List<PathSummary> doFullSymbolic(StaticMethod m)
 	{
-		
+		List<PathSummary> result = new ArrayList<PathSummary>();
+		List<ToDoPath> pathList = this.generateToDoPaths(m, 0, -1);
+		for (ToDoPath p : pathList)
+		{
+			result.add(this.doFullSymbolic(m, p));
+		}
+		return result;
+	}
+	
+	public PathSummary doFullSymbolic(StaticMethod m, ToDoPath p)
+	{
+		PathSummary ps = new PathSummary();
+		SymbolicContext sc = new SymbolicContext();
+		for (int index = 0; index < p.execLog.size(); index++)
+		{
+			StaticStmt s = m.getStatements().get(index);
+			if (s.isReturnStmt())
+			{
+				
+			}
+			if (s.isIfStmt())
+			{
+				
+			}
+			else if (s.isSwitchStmt())
+			{
+				
+			}
+		}
 		return null;
 	}
 	
 	public List<PathSummary> doFullSymbolic(ArrayList<String> execLog)
 	{
-		
+		//TODO
 		return null;
 	}
 	
@@ -39,88 +69,130 @@ public class SymbolicExecution {
 	public ArrayList<ToDoPath> generateToDoPaths(StaticMethod m, int startingStmtID, int endingStmtID)
 	{
 		ArrayList<ToDoPath> result = new ArrayList<ToDoPath>();
-		ArrayList<ToDoPath> unexploredTDPs = new ArrayList<ToDoPath>();
+		ArrayList<ToDoPath> unfinished = new ArrayList<ToDoPath>();
 		ToDoPath tdP = new ToDoPath(startingStmtID, endingStmtID);
-		unexploredTDPs.add(tdP);
+		unfinished.add(tdP);
 		int counter = 1;
-		while (unexploredTDPs.size() > 0)
+		while (unfinished.size() > 0)
 		{
-			ToDoPath p = unexploredTDPs.remove(unexploredTDPs.size()-1);
-			System.out.println("=============== symbolic execution No." + counter);
-			exploreTDP(unexploredTDPs, p, m);
-			if (p.isLegit)
+			ToDoPath p = unfinished.remove(unfinished.size()-1);
+			if (debug)
 			{
-				result.add(p);
+				System.out.println("=============== symbolic execution " + m.getSignature() + " No." + counter++);
 			}
+			ArrayList<ToDoPath> finishedTDPs = exploreTDP(unfinished, p, m);
+			if (p.isLegit)
+				result.addAll(finishedTDPs);
 		}
+		result = removeDupe(result);
 		return result;
 	}
 	
-	private void exploreTDP(ArrayList<ToDoPath> tdPList, ToDoPath tdP, StaticMethod m)
+	private ArrayList<ToDoPath> generateToDoPaths(StaticMethod m, int startingStmtID, int endingStmtID, boolean print)
 	{
-		int nextStmtID = tdP.startingStmtID;
-		ArrayList<String> newChoices = new ArrayList<String>();
-		while (nextStmtID != tdP.endingStmtID)
+		ArrayList<ToDoPath> result = new ArrayList<ToDoPath>();
+		ArrayList<ToDoPath> unfinished = new ArrayList<ToDoPath>();
+		ToDoPath tdP = new ToDoPath(startingStmtID, endingStmtID);
+		unfinished.add(tdP);
+		int counter = 1;
+		while (unfinished.size() > 0)
 		{
-			StaticStmt s = m.getStatements().get(nextStmtID++);
-			if (tdP.endingStmtID == s.getStatementID())
+			ToDoPath p = unfinished.remove(unfinished.size()-1);
+			if (print)
 			{
-				tdP.isLegit = true;
+				System.out.println("=============== symbolic execution " + m.getSignature() + " No." + counter++);
+			}
+			ArrayList<ToDoPath> finishedTDPs = exploreTDP(unfinished, p, m);
+			if (p.isLegit)
+				result.addAll(finishedTDPs);
+		}
+		result = removeDupe(result);
+		return result;
+	}
+	
+	
+	private ArrayList<ToDoPath> exploreTDP(ArrayList<ToDoPath> tdPList, ToDoPath p, StaticMethod m)
+	{
+		ArrayList<ToDoPath> result = new ArrayList<ToDoPath>();
+		result.add(p.clone());
+		int nextStmtID = p.startingStmtID;
+		while (nextStmtID != p.endingStmtID)
+		{
+			
+			StaticStmt s = m.getStatements().get(nextStmtID++);
+			if (s == null)
+			{
+				System.out.println("SymbolicExecution.exploreTDP() ran into null StaticStmt.");
+				System.exit(1);
+			}
+			if (debug)
+			{
+				System.out.println("Stmt: " + s.getUniqueID());
+			}
+			for (ToDoPath tdP : result)
+				tdP.execLog.add(s.getUniqueID());
+			if (p.endingStmtID == s.getStatementID()) // reached specified ending
+			{
+				for (ToDoPath tdP : result)
+					tdP.isLegit = true;
 				break;
 			}
-			else if (s.isIfStmt())
+			else if (s.isIfStmt()) // follow order or make own choice
 			{
-				//TODO bug here, new if statement shouldn't be able to read stuff
-				String direction = tdP.getDirection(s.getStatementID());
-				if (direction.equals("jump"))
+				for (ToDoPath tdP : result)
 				{
-					nextStmtID = s.getIfJumpTargetID();
-				}
-				else if (direction.equals("flow"))
-				{
-					//no action
-				}
-				else if (direction.startsWith("force")) // breaking out of loop
-				{
-					if (direction.endsWith("Jump"))
+					String order = tdP.getOrder(s.getUniqueID());
+					String choice = order;
+					if (order.equals("jump"))
 					{
 						nextStmtID = s.getIfJumpTargetID();
 					}
-				}
-				else // if no orders to follow, then choose flow through
-				{
-					ToDoPath newTDP = tdP.copy();
-					newTDP.branchChoices.add(s.getStatementID() + ",jump");
-					tdPList.add(newTDP);
-					newChoices.add(s.getStatementID() + ",flow");
-					System.out.println("At stmt id " + s.getStatementID() + " forks a new ToDoPath");
-					System.out.println("=== old");
-					tdP.print();
-					System.out.println("=== new");
-					newTDP.print();
-				}
-			}
-			else if (s.isSwitchStmt())
-			{
-				String direction = tdP.getDirection(s.getStatementID());
-				Map<Integer, String> switchMap = s.getSwitchMap();
-				if (direction.equals("flow"))
-				{}
-				else if (direction.startsWith("case"))
-				{
-					int caseValue = Integer.parseInt(direction.substring(direction.indexOf("case")+4));
-					String label = switchMap.get(caseValue);
-					nextStmtID = m.getFirstStmtOfBlock(label).getStatementID();
-				}
-				else // no orders to follow, choose flow through
-				{
-					for (int caseValue : switchMap.keySet())
+					else if (order.equals("flow"))
+					{}
+					else if (order.startsWith("force")) // breaking out of loop
 					{
+						choice = order.replace("force", "");
+						if (order.endsWith("jump"))
+						{
+							nextStmtID = s.getIfJumpTargetID();
+						}
+					}
+					else // if no orders to follow, then choose flow through
+					{
+						choice = "flow";
 						ToDoPath newTDP = tdP.copy();
-						newTDP.branchChoices.add(s.getStatementID() + ",case" + caseValue);
+						newTDP.branchOrders.add(s.getUniqueID() + ",jump");
 						tdPList.add(newTDP);
 					}
-					newChoices.add(s.getStatementID() + ",flow");
+					tdP.branchChoices.add(s.getUniqueID()+ "," + choice);
+				}
+			}
+			else if (s.isSwitchStmt()) // follow order or make own choice
+			{
+				for (ToDoPath tdP : result)
+				{
+					String order = tdP.getOrder(s.getUniqueID());
+					String choice = order;
+					Map<Integer, String> switchMap = s.getSwitchMap();
+					if (order.equals("flow"))
+					{}
+					else if (order.startsWith("case"))
+					{
+						int caseValue = Integer.parseInt(order.substring(order.indexOf("case")+4));
+						String label = switchMap.get(caseValue);
+						nextStmtID = m.getFirstStmtOfBlock(label).getStatementID();
+					}
+					else // no orders to follow, choose flow through
+					{
+						choice = "flow";
+						for (int caseValue : switchMap.keySet())
+						{
+							ToDoPath newTDP = tdP.copy();
+							newTDP.branchOrders.add(s.getUniqueID() + ",case" + caseValue);
+							tdPList.add(newTDP);
+						}
+					}
+					tdP.branchChoices.add(s.getUniqueID() + "," + choice);
 				}
 			}
 			else if (s.isGotoStmt())
@@ -129,19 +201,64 @@ public class SymbolicExecution {
 			}
 			else if (s.isReturnStmt() || s.isThrowStmt())
 			{
-				if (tdP.endingStmtID == -1)
+				for (ToDoPath tdP : result)
 				{
-					tdP.endingStmtID = s.getStatementID();
-					tdP.isLegit = true;
-					break;
+					if (tdP.endingStmtID == -1) // natural ending
+					{
+						tdP.endingStmtID = s.getStatementID();
+						tdP.isLegit = true;
+					}
+					else // this isn't the ending we wanted, this ToDoPath will be discarded
+					{
+						tdP.isLegit = false;
+					}
 				}
-				else // this isn't the ending we wanted, this ToDoPath will be discarded
+				break;
+			}
+			else if (s.isInvokeStmt())
+			{
+				//TODO deal with inheritance sometime
+				// can use ranged symbolic execution to find out the type of p0
+				String targetSig = s.getInvokeSignature();
+				StaticMethod targetM = this.staticApp.getMethod(targetSig);
+				if (targetM != null && !targetM.isAbstract())
 				{
-					tdP.isLegit = false;
-					break;
+					ArrayList<ToDoPath> invokedTDPs = this.generateToDoPaths(targetM, 0, -1, false);
+					ArrayList<ToDoPath> newResult = new ArrayList<ToDoPath>();
+					for (ToDoPath tdP : result)
+					{
+						for (ToDoPath invkTDP: invokedTDPs)
+						{
+							ToDoPath newP = tdP.clone();
+							newP.branchChoices.addAll(invkTDP.branchChoices);
+							newP.execLog.addAll(invkTDP.execLog);
+							newP.orderIndex += invkTDP.branchChoices.size();
+							newResult.add(newP);
+						}
+					}
+					result = new ArrayList<ToDoPath>(newResult);
 				}
 			}
 		}
-		tdP.branchChoices.addAll(newChoices);
+		for (ToDoPath tdP : result)
+			if (nextStmtID == tdP.endingStmtID)
+				tdP.execLog.add(m.getSignature() + ":" + nextStmtID);
+		return result;
+	}
+	
+	private ArrayList<ToDoPath> removeDupe(ArrayList<ToDoPath> result)
+	{
+		ArrayList<String> choices = new ArrayList<String>();
+		ArrayList<ToDoPath> newResult = new ArrayList<ToDoPath>();
+		for (ToDoPath p : result)
+		{
+			String choice = p.branchChoicesToString();
+			if (!choices.contains(choice))
+			{
+				choices.add(choice);
+				newResult.add(p);
+			}
+		}
+		return newResult;
 	}
 }

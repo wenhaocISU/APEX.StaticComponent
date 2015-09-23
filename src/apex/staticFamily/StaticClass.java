@@ -40,6 +40,9 @@ public class StaticClass {
 		this.declaration = declaration;
 	}
 	
+	public StaticClass()
+	{}
+	
 	
 
 /**	Setters	**/
@@ -234,6 +237,10 @@ public class StaticClass {
 	
 	public void instrument(Instrumentor instrumentor)
 	{
+		if (this.getDexName().endsWith("ViewPager;"))
+		{
+			System.out.println("");
+		}
 		for (StaticMethod m : this.methods)
 		{
 			m.instrument(this, instrumentor);

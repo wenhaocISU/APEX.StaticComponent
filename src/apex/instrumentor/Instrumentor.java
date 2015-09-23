@@ -1,10 +1,8 @@
 package apex.instrumentor;
 
 import java.util.ArrayList;
-import java.util.List;
 
 import apex.staticFamily.StaticClass;
-import apex.staticFamily.StaticField;
 import apex.staticFamily.StaticMethod;
 import apex.staticFamily.StaticStmt;
 
@@ -12,7 +10,7 @@ public class Instrumentor {
 	
 	/**
 	 * Things to do:
-	 * 
+	 * 0. add statement id into comments above statement "#id 123"
 	 * 1. print "Method_Starting,[method signature]" before 1st statement
 	 * 2. print "Method_Returning,[method signature]" before return statement
 	 * 3. print "Method_Throwing,[method signature]" before throw statement
@@ -24,6 +22,8 @@ public class Instrumentor {
 
 	public void instrumentStmt(StaticClass c, StaticMethod m, StaticStmt s)
 	{
+		// Job 0
+		s.addDebugInfo("    #id " + s.getStatementID());
 		// Job 1
 		if (s.isFirstStmtOfMethod())
 		{
@@ -82,7 +82,7 @@ public class Instrumentor {
 	private ArrayList<String> generatePrintLnStmts(StaticClass c, StaticMethod m, StaticStmt s, String text)
 	{
 		ArrayList<String> result = new ArrayList<String>();
-		result.add("    #print: " + text);
+		//result.add("    #print: " + text);
 		
 		String regInfo = m.findUsableRegister(s);
 		String regName = "", regType = "";
@@ -96,6 +96,15 @@ public class Instrumentor {
 			regName = regInfo;
 		}
 		//TODO
+		String[] sigs = {
+				"Landroid/support/v4/view/ViewPager;->infoForCurrentScrollPosition()Landroid/support/v4/view/ViewPager$ItemInfo;",
+				"Landroid/support/v4/view/ViewPager;->dataSetChanged()V",
+				"Landroid/support/v7/internal/view/menu/ActionMenuPresenter;->flagActionItems()Z",
+				"Landroid/support/v7/internal/widget/ActivityChooserModel;->readHistoricalDataImpl()V",
+				"Landroid/support/v7/internal/widget/AdapterViewICS;->findSyncPosition()I",
+				"Landroid/support/v7/internal/widget/ListPopupWindow;->buildDropDown()I",
+				"Landroid/support/v7/internal/widget/ScrollingTabContainerView$TabView;->update()V"
+		};
 		
 		
 		return result;

@@ -75,15 +75,15 @@ public class StaticStmt {
 		return smaliStmt;
 	}
 	
-	public String getSmaliStmtWithIDCommented()
-	{
-		String comment = "stmtID=[" + getStatementID() + "],blockName=[" + getBlockName() + "]";
-		return smaliStmt + "    # " + comment;
-	}
-	
 	public int getStatementID()
 	{
 		return id;
+	}
+	
+	/**	return [method signature],[statement id]	*/
+	public String getUniqueID()
+	{
+		return this.containingMethod.getSignature()+ ":" + this.id;
 	}
 	
 	public StaticMethod getContainingMethod()
@@ -145,7 +145,7 @@ public class StaticStmt {
 	{
 		ArrayList<String> result = new ArrayList<String>();
 		result.addAll(this.getPreStmtDebugInfo());
-		result.add("    " + this.getSmaliStmt());
+		result.add("    " + this.smaliStmt);
 		result.addAll(this.getPostStmtDebugInfo());
 		return result;
 	}
@@ -159,7 +159,7 @@ public class StaticStmt {
 			result.add("");
 		}
 		result.addAll(this.getPreStmtDebugInfo());
-		result.add("    " + this.getSmaliStmtWithIDCommented());
+		result.add("    " + this.smaliStmt);
 		result.addAll(this.getPostStmtDebugInfo());
 		if (!this.getInstrumentedSucceedingStmts().isEmpty())
 		{
@@ -204,6 +204,11 @@ public class StaticStmt {
 	public boolean isGotoStmt()
 	{
 		return (this.getBytecodeOperator().equals("goto"));
+	}
+	
+	public boolean isInvokeStmt()
+	{
+		return (this.getBytecodeOperator().startsWith("invoke"));
 	}
 	
 	public boolean hasOriginalLineNumber()
@@ -262,6 +267,13 @@ public class StaticStmt {
 		String targetLabel = this.smaliStmt.substring(this.smaliStmt.indexOf(":"));
 		return this.containingMethod.getFirstStmtOfBlock(targetLabel).getStatementID();
 
+	}
+	
+	public String getInvokeSignature()
+	{
+		if (!this.isInvokeStmt())
+			return "";
+		return this.smaliStmt.substring(this.smaliStmt.lastIndexOf(", ")+2);
 	}
 	
 	public Map<Integer, String> getSwitchMap()

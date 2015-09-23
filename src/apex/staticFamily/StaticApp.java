@@ -43,6 +43,7 @@ public class StaticApp {
 	
 	public void instrument()
 	{
+		System.out.println("Instrumenting...");
 		Instrumentor instrumentor = new Instrumentor();
 		for (StaticClass c : this.classes)
 		{
@@ -71,7 +72,7 @@ public class StaticApp {
 			unsignedApp.delete();
 		if (signedApp.exists())
 			signedApp.delete();
-		Apktool.buildAPK(this.dataFolder + "/apktool", this.getUnsignedApkPath());
+		Apktool.buildAPK(this.dataFolder + File.separator + "apktool", this.getUnsignedApkPath());
 		Jarsigner.signAPK(this.getUnsignedApkPath(), this.getInstrumentedApkPath());
 	}
 	
@@ -108,7 +109,7 @@ public class StaticApp {
 			unsignedApp.delete();
 		if (signedApp.exists())
 			signedApp.delete();
-		Apktool.buildAPK(this.dataFolder + "/apktool", this.getUnsignedApkPath());
+		Apktool.buildAPK(this.dataFolder + File.separator + "apktool", this.getUnsignedApkPath());
 		Jarsigner.signAPK(this.getUnsignedApkPath(), this.getInstrumentedApkPath());
 	}
 	
@@ -218,15 +219,16 @@ public class StaticApp {
 	}
 	
 	public String getInstrumentedApkPath() {
-		String result = this.dataFolder + "/";
-		result += apkPath.substring(apkPath.lastIndexOf("/")+1, apkPath.lastIndexOf(".apk"));
+		String result = this.dataFolder + File.separator;
+		result += apkPath.substring(apkPath.lastIndexOf(File.separator)+1, apkPath.lastIndexOf(".apk"));
 		result += "_instrumented.apk";
+		
 		return result;
 	}
 
 	public String getUnsignedApkPath() {
-		String result = this.dataFolder + "/";
-		result += apkPath.substring(apkPath.lastIndexOf("/")+1, apkPath.lastIndexOf(".apk"));
+		String result = this.dataFolder + File.separator;
+		result += apkPath.substring(apkPath.lastIndexOf(File.separator)+1, apkPath.lastIndexOf(".apk"));
 		result += "_unsigned.apk";
 		return result;
 	}

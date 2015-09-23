@@ -283,7 +283,7 @@ public class StaticMethod {
 		StaticStmt currentStmt = s;
 		ArrayList<String> reg_read = new ArrayList<String>();
 		ArrayList<String> reg_write = new ArrayList<String>();
-		while (!finished)
+		//while (!finished)
 		{
 			//First, collect all exec log from current stmt to return/throw
 			//	for each exec_log:

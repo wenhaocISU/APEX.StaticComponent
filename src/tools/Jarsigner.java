@@ -34,7 +34,7 @@ public class Jarsigner {
 			pc.waitFor();
 			outApp = new File(outAppPath);
 			if (outApp.exists()) {
-				System.out.println("Signed file:\n\t" + outAppPath + "\n");
+				System.out.println("Signed file:\n\t" + outApp.getAbsolutePath() + "\n");
 				inApp.delete();
 			}
 		}

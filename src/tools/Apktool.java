@@ -1,6 +1,7 @@
 package tools;
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.InputStreamReader;
 
 import apex.Paths;
@@ -44,8 +45,8 @@ public class Apktool {
 		String command = "java -jar " + Paths.apktoolPath
 						//+ " b -f -a " + Paths.aaptPath
 						+ " b -f"
-						+ " -o " + outPath
-						+ " " + sourceDir;
+						+ " -o " + outPath.replace("/", File.separator)
+						+ " " + sourceDir.replace("/", File.separator);
 		System.out.println("Compiling instrumented smali code into APK file...");
 		try {
 			Process pc = Runtime.getRuntime().exec(command);

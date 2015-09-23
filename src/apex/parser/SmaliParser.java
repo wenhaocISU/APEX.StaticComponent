@@ -15,47 +15,34 @@ import apex.staticFamily.StaticMethod;
 
 public class SmaliParser implements Callable<StaticClass>{
 	
+	private File smaliFile;
 	private String originalSmaliPath = "";
 	private String instrumentedSmaliPath = "";
 	
-	public SmaliParser(String smaliFilePath)
+	public SmaliParser(File smaliFile)
 	{
-		this.originalSmaliPath = smaliFilePath;
-		this.instrumentedSmaliPath = smaliFilePath;
-		this.moveSmaliFile();
+		this.smaliFile = smaliFile;
+		this.originalSmaliPath = smaliFile.getAbsolutePath();
+		this.instrumentedSmaliPath = smaliFile.getAbsolutePath();
 	}
-	
-	// put a copy of the original smali files into "/oldSmali" folder
-	// because later instrumentation will overwrite the "/smali" folder
-	private void moveSmaliFile()
+
+	@Override
+	public StaticClass call() throws Exception
 	{
-		try
+		StaticClass c = this.Parse();
+		if (c != null)
 		{
-			String targetPath = this.originalSmaliPath.replaceFirst("/smali/", "/oldSmali/");
-			File outFile = new File(targetPath);
-			outFile.getParentFile().mkdirs();
-			PrintWriter out = new PrintWriter(new FileWriter(targetPath));
-			BufferedReader in = new BufferedReader(new FileReader(this.originalSmaliPath));
-			String line;
-			while ((line = in.readLine())!=null)
-			{
-				out.write(line + "\n");
-			}
-			out.flush();
-			out.close();
-			in.close();
-			this.originalSmaliPath = targetPath;
+			moveSmaliFile(c.getDexName());
+			c.setSmaliFilePath(this.originalSmaliPath);
+			c.setInstrumentedSmaliFilePath(this.instrumentedSmaliPath);
 		}
-		catch (Exception e)
-		{
-			e.printStackTrace();
-		}
+		return c;
 	}
 	
 	public StaticClass Parse() throws IOException
 	{
 		StaticClass c = null;
-		BufferedReader in = new BufferedReader(new FileReader(this.originalSmaliPath));
+		BufferedReader in = new BufferedReader(new FileReader(this.smaliFile));
 		String line;
 		while ((line = in.readLine())!=null)
 		{
@@ -120,19 +107,43 @@ public class SmaliParser implements Callable<StaticClass>{
 			}
 		}
 		in.close();
-		if (c != null)
-		{
-			c.setSmaliFilePath(this.originalSmaliPath);
-			c.setInstrumentedSmaliFilePath(this.instrumentedSmaliPath);
-		}
 		return c;
 	}
 
-	@Override
-	public StaticClass call() throws Exception
+	
+	// put a copy of the original smali files into "/oldSmali" folder
+	// because later instrumentation will overwrite the "/smali" folder
+	private void moveSmaliFile(String dexName)
 	{
-		return this.Parse();
+		try
+		{
+			changeOriginalSmaliPath(dexName.substring(1, dexName.length()-1).replace("/", File.separator));
+			File outFile = new File(this.originalSmaliPath);
+			outFile.getParentFile().mkdirs();
+			PrintWriter out = new PrintWriter(new FileWriter(this.originalSmaliPath.replace("/", File.separator)));
+			BufferedReader in = new BufferedReader(new FileReader(this.smaliFile));
+			String line;
+			while ((line = in.readLine())!=null)
+			{
+				out.write(line + "\n");
+			}
+			out.flush();
+			out.close();
+			in.close();
+		}
+		catch (Exception e)
+		{
+			e.printStackTrace();
+		}
 	}
 	
+	private void changeOriginalSmaliPath(String classPath)
+	{
+		String smali = this.smaliFile.getAbsolutePath();
+		String oldSmali = smali.substring(0, smali.lastIndexOf(classPath));
+		oldSmali = oldSmali.substring(0, oldSmali.lastIndexOf("smali"));
+		oldSmali += "oldSmali" + File.separator + classPath + ".smali";
+		this.originalSmaliPath = oldSmali;
+	}
 	
 }

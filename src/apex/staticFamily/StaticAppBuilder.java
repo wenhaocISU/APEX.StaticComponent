@@ -24,10 +24,10 @@ public class StaticAppBuilder {
 			System.out.println("[ERROR] Not a valid APK file: " + apkFilePath);
 			return null;
 		}
-		String outFolder = Paths.AppDataDir + "/" + apk.getName() + "/apktool"; 
-		Apktool.extractAPK(apkFilePath, outFolder, decodeRes);
+		String outFolder = Paths.AppDataDir.replace("/", File.separator) + File.separator + apk.getName() + File.separator + "apktool"; 
+		Apktool.extractAPK(apk.getAbsolutePath(), outFolder, decodeRes);
 		StaticApp staticApp = fromApktoolOutFolder(outFolder);
-		staticApp.setApkPath(apkFilePath);
+		staticApp.setApkPath(apk.getAbsolutePath());
 		return staticApp;
 	}
 	
@@ -39,10 +39,10 @@ public class StaticAppBuilder {
 	{
 		StaticApp staticApp = new StaticApp();
 		
-		File smaliFolder = new File(apktoolOutFolder + "/oldSmali");
+		File smaliFolder = new File(apktoolOutFolder + File.separator + "oldSmali");
 		if (!smaliFolder.exists())
 		{
-			smaliFolder = new File(apktoolOutFolder + "/smali");
+			smaliFolder = new File(apktoolOutFolder + File.separator + "smali");
 		}
 		
 		System.out.print("Parsing smali files. Might take a while...");
@@ -56,9 +56,9 @@ public class StaticAppBuilder {
 		}
 		System.out.println(" Done.");
 		
-		XMLParser.parseAndroidManifest(staticApp, apktoolOutFolder + "/AndroidManifest.xml");
+		XMLParser.parseAndroidManifest(staticApp, apktoolOutFolder + File.separator + "AndroidManifest.xml");
 		
-		String outFolder = apktoolOutFolder.substring(0, apktoolOutFolder.length()-8);
+		String outFolder = apktoolOutFolder.substring(0, apktoolOutFolder.lastIndexOf("apktool"));
 		staticApp.setDataFolder(outFolder);
 		
 		System.out.println("Parsing Finished.\n");
@@ -100,7 +100,7 @@ public class StaticAppBuilder {
 		}
 		else if (smaliFile.isFile() && smaliFile.getName().endsWith(".smali"))
 		{
-			SmaliParser sp = new SmaliParser(smaliFile.getAbsolutePath());
+			SmaliParser sp = new SmaliParser(smaliFile);
 			smaliParsers.add(sp);
 		}
 	}
@@ -116,7 +116,7 @@ public class StaticAppBuilder {
 		}
 		else if (smaliFile.isFile() && smaliFile.getName().endsWith(".smali"))
 		{
-			SmaliParser sp = new SmaliParser(smaliFile.getAbsolutePath());
+			SmaliParser sp = new SmaliParser(smaliFile);
 			try
 			{
 				staticApp.addClass(sp.Parse());

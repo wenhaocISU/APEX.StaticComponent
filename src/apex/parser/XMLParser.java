@@ -33,6 +33,7 @@ public class XMLParser {
 					aName = pkgName + aName;
 				if (!aName.contains("."))
 					aName = pkgName + "." + aName;
+				
 				StaticClass c = staticApp.getClassByJavaName(aName);
 				if (c == null)
 				{
