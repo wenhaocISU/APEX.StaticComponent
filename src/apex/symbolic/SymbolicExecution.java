@@ -25,32 +25,55 @@ public class SymbolicExecution {
 		List<ToDoPath> pathList = this.generateToDoPaths(m, 0, -1);
 		for (ToDoPath p : pathList)
 		{
-			result.add(this.doFullSymbolic(m, p));
+			result.add(this.doFullSymbolic(p));
 		}
 		return result;
 	}
 	
-	public PathSummary doFullSymbolic(StaticMethod m, ToDoPath p)
+	public PathSummary doFullSymbolic(ToDoPath p)
 	{
 		PathSummary ps = new PathSummary();
 		SymbolicContext sc = new SymbolicContext();
 		for (int index = 0; index < p.execLog.size(); index++)
 		{
-			StaticStmt s = m.getStatements().get(index);
-			if (s.isReturnStmt())
+			String stmtInfo = p.execLog.get(index);
+			if (stmtInfo.contains(",")) //if or switch
 			{
-				
+				String choice = stmtInfo.substring(stmtInfo.indexOf(",")+1);
+				stmtInfo = stmtInfo.substring(0, stmtInfo.indexOf(","));
+				StaticStmt s = staticApp.getStmt(stmtInfo);
+				if (s.isIfStmt())
+				{
+					Expression cond = s.getIfJumpCondition();
+					if (choice.equals("flow"))
+						cond = cond.getReverseCondition();
+					ps.updatePathConstraint(sc, cond);
+				}
+				else if (s.isSwitchStmt())
+				{
+					if (choice.equals("flow"))
+					{
+						for (Expression cond : s.getSwitchFlowThroughConditions())
+						{
+							ps.updatePathConstraint(sc, cond);
+						}
+					}
+					else if (choice.startsWith("case"))
+					{
+						int caseValue = Integer.parseInt(choice.replace("case", ""));
+						ps.updatePathConstraint(sc, s.getSwitchCaseCondition(caseValue));
+					}
+				}
 			}
-			if (s.isIfStmt())
+			else
 			{
-				
-			}
-			else if (s.isSwitchStmt())
-			{
-				
+				StaticStmt s = staticApp.getStmt(stmtInfo);
+				sc.applyStatement(s);
 			}
 		}
-		return null;
+		ps.setExecutionLog(p.execLog);
+		ps.setSymbolicStates(sc);
+		return ps;
 	}
 	
 	public List<PathSummary> doFullSymbolic(ArrayList<String> execLog)
@@ -58,6 +81,8 @@ public class SymbolicExecution {
 		//TODO
 		return null;
 	}
+	
+	
 	
 	/**
 	 * Generate a list of ToDoPath from StaticMethod
@@ -241,8 +266,20 @@ public class SymbolicExecution {
 			}
 		}
 		for (ToDoPath tdP : result)
+		{
 			if (nextStmtID == tdP.endingStmtID)
 				tdP.execLog.add(m.getSignature() + ":" + nextStmtID);
+			for (String choice : tdP.branchChoices)
+			{
+				String stmtInfo = choice.split(",")[0];
+				int index = tdP.execLog.indexOf(stmtInfo);
+				if (index > -1)
+				{
+					tdP.execLog.remove(index);
+					tdP.execLog.add(index, choice);
+				}
+			}
+		}
 		return result;
 	}
 	

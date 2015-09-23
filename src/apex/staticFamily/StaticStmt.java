@@ -260,6 +260,43 @@ public class StaticStmt {
 		return this.containingMethod.getFirstStmtOfBlock(targetLabel).getStatementID();
 	}
 	
+	public Expression getIfJumpCondition()
+	{
+		if (!this.isIfStmt())
+			return null;
+		return DEXParser.getIfJumpCondition(this);
+	}
+	
+	public ArrayList<Expression> getSwitchFlowThroughConditions()
+	{
+		ArrayList<Expression> result = new ArrayList<Expression>();
+		if (!this.isSwitchStmt())
+			return null;
+		String stmt = this.smaliStmt;
+		String vA = stmt.substring(stmt.indexOf(" ")+1, stmt.indexOf(", "));
+		Map<Integer, String> switchMap = this.getSwitchMap();
+		for (int value : switchMap.keySet())
+		{
+			Expression cond = new Expression("/=");
+			cond.add(vA);
+			cond.add(value+"");
+			result.add(cond);
+		}
+		return result;
+	}
+	
+	public Expression getSwitchCaseCondition(int caseValue)
+	{
+		if (!this.isSwitchStmt())
+			return null;
+		String stmt = this.smaliStmt;
+		String vA = stmt.substring(stmt.indexOf(" ")+1, stmt.indexOf(", "));
+		Expression cond = new Expression("=");
+		cond.add(vA);
+		cond.add(caseValue+"");
+		return cond;
+	}
+	
 	public int getGotoTargetID()
 	{
 		if (!this.isGotoStmt())

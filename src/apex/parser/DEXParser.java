@@ -761,7 +761,7 @@ public class DEXParser {
 		}
 	}
 	
-	public static Expression getJumpCondition(StaticStmt s)
+	public static Expression getIfJumpCondition(StaticStmt s)
 	{
 		Expression ex = null;
 		String stmt = s.getSmaliStmt();
