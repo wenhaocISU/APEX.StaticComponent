@@ -234,10 +234,10 @@ public class StaticApp {
 	}
 
 	public StaticStmt getStmt(String stmtInfo) {
-		String methodSig = stmtInfo.split(",")[0];
-		int stmtID = Integer.parseInt(stmtInfo.split(",")[1]);
+		String methodSig = stmtInfo.split(":")[0];
+		int stmtID = Integer.parseInt(stmtInfo.split(":")[1]);
 		StaticMethod m = this.getMethod(methodSig);
-		if (stmtID > 0 && m != null && m.getStatements().size() > stmtID)
+		if (stmtID >= 0 && m != null && m.getStatements().size() > stmtID)
 			return m.getStatements().get(stmtID);
 		return null;
 	}

@@ -39,6 +39,11 @@ public class StaticMethod {
 		parseBody(methodDeclaration);
 	}
 	
+	public boolean equals(StaticMethod m)
+	{
+		return this.getSignature().equals(m.getSignature());
+	}
+	
 	private void parseParams()
 	{
 		String subSig = getSubSignature();

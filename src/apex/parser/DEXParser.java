@@ -539,6 +539,7 @@ public class DEXParser {
 				System.out.println("cmp stmt not followed by ifz stmt!!!");
 				System.exit(1);
 			}
+			ex = new Expression("");
 		}
 		/** aget vAA, vBB, vCC */
 		else if (stmtIndex >= 62 && stmtIndex <= 68)
@@ -714,7 +715,7 @@ public class DEXParser {
 		 * */
 		else
 		{
-			ex = null;
+			ex = new Expression("");
 		}
 		return ex;
 	}
@@ -1109,7 +1110,6 @@ public class DEXParser {
 		 */
 		else if (stmtIndex >= 200 && stmtIndex <= 218)
 		{
-			String operator = stmt.substring(0, stmt.indexOf("-"));
 			String vs[] = stmt.substring(stmt.indexOf(" " )+1).split(", ");
 			String vA = vs[0];
 			String vB = vs[1];

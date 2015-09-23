@@ -1,15 +1,21 @@
-package apex.symbolic.context;
+package apex.symbolic.object;
 
 import apex.symbolic.Expression;
+import apex.symbolic.value.Value;
 
 public class SymbolicArray extends SymbolicObject{
 
 	private Value length;
-	private Expression arrayExpression;
+
+	
+	public SymbolicArray(int birthday)
+	{
+		super(birthday);
+	}
 	
 	public Expression getArrayExpression()
 	{
-		return this.arrayExpression;
+		return this.expression;
 	}
 	
 	public Value getLength()

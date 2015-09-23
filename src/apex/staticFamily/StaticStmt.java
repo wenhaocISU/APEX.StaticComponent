@@ -221,7 +221,7 @@ public class StaticStmt {
 		return this.debugInfo.getBlockLabel().isEmpty();
 	}
 
-	public Expression getExpression()
+	public Expression getOperationExpression()
 	{
 		if (this.ex == null)
 		{

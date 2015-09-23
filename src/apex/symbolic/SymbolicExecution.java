@@ -7,7 +7,8 @@ import java.util.Map;
 import apex.staticFamily.StaticApp;
 import apex.staticFamily.StaticMethod;
 import apex.staticFamily.StaticStmt;
-import apex.symbolic.context.SymbolicContext;
+import apex.symbolic.context.MethodContext;
+import apex.symbolic.context.VMContext;
 
 public class SymbolicExecution {
 
@@ -23,17 +24,22 @@ public class SymbolicExecution {
 	{
 		List<PathSummary> result = new ArrayList<PathSummary>();
 		List<ToDoPath> pathList = this.generateToDoPaths(m, 0, -1);
+		VMContext vm = new VMContext();
+		MethodContext mc = new MethodContext(m, vm);
+		vm.push(mc);
+		vm.printSnapshot();
+		int id = 0;
 		for (ToDoPath p : pathList)
 		{
-			result.add(this.doFullSymbolic(p));
+			result.add(this.doFullSymbolic(vm, p, m.getSignature(), id++));
 		}
+		vm.printSnapshot();
 		return result;
 	}
 	
-	public PathSummary doFullSymbolic(ToDoPath p)
+	public PathSummary doFullSymbolic(VMContext vm, ToDoPath p, String methodSig, int id)
 	{
-		PathSummary ps = new PathSummary();
-		SymbolicContext sc = new SymbolicContext();
+		PathSummary ps = new PathSummary(methodSig, id);
 		for (int index = 0; index < p.execLog.size(); index++)
 		{
 			String stmtInfo = p.execLog.get(index);
@@ -47,7 +53,7 @@ public class SymbolicExecution {
 					Expression cond = s.getIfJumpCondition();
 					if (choice.equals("flow"))
 						cond = cond.getReverseCondition();
-					ps.updatePathConstraint(sc, cond);
+					ps.updatePathConstraint(vm, cond);
 				}
 				else if (s.isSwitchStmt())
 				{
@@ -55,24 +61,24 @@ public class SymbolicExecution {
 					{
 						for (Expression cond : s.getSwitchFlowThroughConditions())
 						{
-							ps.updatePathConstraint(sc, cond);
+							ps.updatePathConstraint(vm, cond);
 						}
 					}
 					else if (choice.startsWith("case"))
 					{
 						int caseValue = Integer.parseInt(choice.replace("case", ""));
-						ps.updatePathConstraint(sc, s.getSwitchCaseCondition(caseValue));
+						ps.updatePathConstraint(vm, s.getSwitchCaseCondition(caseValue));
 					}
 				}
 			}
 			else
 			{
 				StaticStmt s = staticApp.getStmt(stmtInfo);
-				sc.applyStatement(s);
+				vm.applyOperation(s);
 			}
 		}
 		ps.setExecutionLog(p.execLog);
-		ps.setSymbolicStates(sc);
+		ps.setSymbolicStates(vm);
 		return ps;
 	}
 	

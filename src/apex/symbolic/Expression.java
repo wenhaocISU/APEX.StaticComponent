@@ -25,6 +25,11 @@ public class Expression extends DefaultMutableTreeNode{
 		this.add(new Expression(string));
 	}
 	
+	public Expression getChild(int childID)
+	{
+		return (Expression) this.getChildAt(childID);
+	}
+	
 	public Expression clone(){
 		Expression root = new Expression(this.getUserObject().toString());
 		for(int i=0; i< this.getChildCount();i++){
