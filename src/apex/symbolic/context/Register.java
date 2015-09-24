@@ -7,17 +7,18 @@ public class Register {
 	String name;
 	Value value;
 	boolean isParameter;
-	boolean isLocked;
+	boolean isLocked = false;
 	
-	Register(String id, boolean isParameter)
+	Register(String name, boolean isParameter)
 	{
-		this.name = id;
+		this.name = name;
 		this.isParameter = isParameter;
 	}
 	
-	void putValue(Value v)
+	void assign(Value v)
 	{
 		this.value = v;
+		this.isLocked = false;
 	}
 	
 	Value getValue()

@@ -53,7 +53,7 @@ public class StaticField {
 	
 	public String getSignature()
 	{
-		return this.declaringClass + "->" + this.getSubSignature();
+		return this.declaringClass.getDexName() + "->" + this.getSubSignature();
 	}
 	
 	public String getName() {

@@ -3,7 +3,9 @@ package apex.symbolic;
 import java.util.ArrayList;
 
 public class ToDoPath {
-
+	
+	
+	int id = -1;
 	/**
 	 * Attributes in exploring stage
 	 * */
@@ -57,6 +59,12 @@ public class ToDoPath {
 		}
 		return branchChoice.split(",")[1];
 	}
+	
+	public int getID()
+	{
+		return this.id;
+	}
+	
 	
 	/**
 	 * return a new instance of ToDoPath which has the same

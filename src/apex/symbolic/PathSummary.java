@@ -9,37 +9,39 @@ public class PathSummary {
 
 	private String methodSignature;
 	private int id;
-	private boolean endsWithThrow;
 	
+	private VMContext vm;
 	private ArrayList<String> executionLog = new ArrayList<String>();
 	private ArrayList<Expression> pathCondition = new ArrayList<Expression>();
 	private ArrayList<Value> symbolicStates = new ArrayList<Value>();
 	
 	
-	public PathSummary(String methodSig, int id)
+	public PathSummary(VMContext vm, ToDoPath p, String methodSig, int id)
 	{
+		this.vm = vm;
+		this.setExecutionLog(p.execLog);
 		this.methodSignature = methodSig;
 		this.id = id;
 	}
 	
-	public void updatePathConstraint(VMContext vm, Expression cond)
+	void updatePathConstraint(Expression cond)
 	{
-		
-	}
-	
-	public void setSymbolicStates(VMContext vm)
-	{
-		
+		this.pathCondition.add(this.vm.getPathCondition(cond));
 	}
 
-	public void setExecutionLog(ArrayList<String> execLog)
+	void setExecutionLog(ArrayList<String> execLog)
 	{
 		this.executionLog = new ArrayList<String>(execLog);
 	}
 	
+	public boolean endsWithThrow()
+	{
+		return this.vm.endsWithThrow();
+	}
+	
 	public void print()
 	{
-		System.out.println("Path Summary No." + id + " for method " + methodSignature);
+		System.out.println("\nPath Summary No." + id + " for method " + methodSignature);
 		System.out.println("Execution Log:");
 		for (String s : this.executionLog)
 			System.out.println(" " + s);
@@ -49,5 +51,6 @@ public class PathSummary {
 		System.out.println("Path Conditions:");
 		for (Expression cond : this.pathCondition)
 			System.out.println(" " + cond.toYicesStatement());
+		System.out.println("\n");
 	}
 }

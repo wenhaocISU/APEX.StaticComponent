@@ -20,7 +20,7 @@ public class SymbolicObject{
 	public SymbolicObject(int birthday, Expression ex)
 	{
 		this.address = "#obj_" + birthday;
-		this.expression = ex;
+		this.expression = ex.clone();
 	}
 	
 	public String getAddress()
@@ -38,9 +38,23 @@ public class SymbolicObject{
 		members.put(fieldSig, value);
 	}
 	
-	public void getField(String fieldSig)
+	public boolean initializedField(String fieldSig)
 	{
-		//TODO
+		return this.members.containsKey(fieldSig);
+	}
+	
+	public void initializeField(String fieldSig)
+	{
+		
+	}
+	
+	public Value getField(String fieldSig)
+	{
+		return members.get(fieldSig);
+		// if we don't have the class body, then it's possible
+		// that we didn't initialize its member fields when
+		// creating the object
+		
 	}
 	
 	public void print()
@@ -56,7 +70,7 @@ public class SymbolicObject{
 			for (Map.Entry<String, Value> entry : this.members.entrySet())
 			{
 				System.out.println("  **key: " + entry.getKey());
-				System.out.println("  **Value: " + entry.getValue().toString());
+				System.out.println("  **Value:\n" + entry.getValue().toString());
 			}
 		}
 	}

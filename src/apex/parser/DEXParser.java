@@ -269,11 +269,24 @@ public class DEXParser {
 				 * */
 				new String[]
 				{
-				"not", "neg", "add", "sub", "rsub", "mul", "div",
-				"rem", "and", "or", "xor", "shl", "shr", "ushr"
+					"not", "neg", "add", "sub", "rsub", "mul", "div",
+					"rem", "and", "or", "xor", "shl", "shr", "ushr"
 				}
 			)
 		);
+
+	private static List<String> primitiveTypes = 
+			new ArrayList<String>
+			(
+				Arrays.asList
+				(
+					new String[]
+					{
+						"V", "Z", "B", "S", "C",
+						"I", "J", "F", "D"
+					}
+				)
+			);
 	
 	public static Expression generateExpression(StaticStmt s)
 	{
@@ -307,11 +320,13 @@ public class DEXParser {
 		{
 			String vA = stmt.substring(stmt.indexOf(" ")+1, stmt.indexOf(", "));
 			String hex = stmt.substring(stmt.indexOf(", ")+2);
-			String dec = "";
+			String dec;
+			String type = "I";
 			if (hex.contains("# "))
 			{
 				dec = hex.substring(hex.indexOf("# ")+2);
 				hex = hex.substring(0, hex.indexOf(" "));
+				type = "F";
 			}
 			else
 			{
@@ -319,6 +334,7 @@ public class DEXParser {
 			}
 			Expression numberEx = new Expression("$number");
 			numberEx.add(dec);
+			numberEx.add(type);
 			ex.add(vA);
 			ex.add(numberEx);
 		}
@@ -329,9 +345,11 @@ public class DEXParser {
 		{
 			String vA = stmt.substring(stmt.indexOf(" ")+1, stmt.indexOf(", "));
 			String hex = stmt.substring(stmt.indexOf(", ")+2);
-			String dec = "";
+			String dec;
+			String type = "J";
 			if (hex.contains("# "))	// double
 			{
+				type = "D";
 				dec = hex.substring(hex.indexOf("# ")+2);
 				hex = hex.substring(0, hex.indexOf(" "));
 			}
@@ -341,6 +359,7 @@ public class DEXParser {
 			}
 			Expression numberEx = new Expression("$number");
 			numberEx.add(dec);
+			numberEx.add(type);
 			ex.add(vA);
 			ex.add(numberEx);
 		}
@@ -461,6 +480,7 @@ public class DEXParser {
 					lengthInfo.substring(lengthInfo.lastIndexOf(" ")+1));
 			int size = 0;
 			ArrayList<Expression> elementExList = new ArrayList<Expression>();
+			String type = "";
 			for (int i = 1; i < arrayData.size()-1; i++)
 			{
 				String element = arrayData.get(i).trim();
@@ -469,12 +489,14 @@ public class DEXParser {
 				{
 					case 1: // value has suffix 't'
 					{
+						type = "B";
 						hex = element;
 						dec = Integer.parseInt(hex.replace("0x", "").replace("t", ""), 16) + "";
 						break;
 					}
 					case 2: // value has suffix 's'
 					{
+						type = "S";
 						hex = element;
 						dec = Integer.parseInt(hex.replace("0x", "").replace("s", ""), 16) + "";
 						break;
@@ -483,11 +505,13 @@ public class DEXParser {
 					{
 						if (element.contains("# "))
 						{
+							type = "F";
 							hex = element.substring(0, element.indexOf(" "));
 							dec = element.substring(element.indexOf("# ")+2).replace("f", "");
 						}
 						else
 						{
+							type = "I";
 							hex = element;
 							dec = Integer.parseInt(hex.replace("0x", ""), 16) + "";
 						}
@@ -497,11 +521,13 @@ public class DEXParser {
 					{
 						if (element.contains("# "))
 						{
+							type = "D";
 							hex = element.substring(0, element.indexOf(" "));
 							dec = element.substring(element.indexOf("# ")+2);
 						}
 						else
 						{
+							type = "J";
 							hex = element;
 							dec = Long.parseLong(hex.replace("0x", "").replace("L", ""), 16) + "";
 						}
@@ -510,6 +536,7 @@ public class DEXParser {
 				}
 				Expression valueEx = new Expression("$number");
 				valueEx.add(dec);
+				valueEx.add(type);
 				Expression eleEx = new Expression("$element");
 				eleEx.add(size+"");
 				eleEx.add(valueEx);
@@ -518,7 +545,7 @@ public class DEXParser {
 			}
 			Expression arrayEx = new Expression("$array");
 			arrayEx.add(size+"");
-			arrayEx.add("number");
+			arrayEx.add(type);
 			for (Expression eleEx : elementExList)
 			{
 				arrayEx.add(eleEx);
@@ -702,8 +729,8 @@ public class DEXParser {
 			String intLiteral = vs[2];
 			String dec = Integer.parseInt(intLiteral.replace("0x", ""), 16) + "";
 			Expression litEx = new Expression("$number");
-			Expression decEx = new Expression(dec);
-			litEx.add(decEx);
+			litEx.add(dec);
+			litEx.add("I");
 			Expression opEx = new Expression(operator);
 			opEx.add(vB);
 			opEx.add(litEx);
@@ -796,8 +823,8 @@ public class DEXParser {
 				}
 			}
 			ex = new Expression(getYicesOperator(operator));
-			ex.add(new Expression(vA));
-			ex.add(new Expression(right));
+			ex.add(vA);
+			ex.add(right);
 		}
 		return ex;
 	}
@@ -837,6 +864,11 @@ public class DEXParser {
 	public static boolean isArithmaticalOperator(String operator)
 	{
 		return DEXParser.arithmaticalOp.contains(operator);
+	}
+	
+	public static boolean isPrimitiveType(String type)
+	{
+		return DEXParser.primitiveTypes.contains(type);
 	}
 	
 	public static List<List<String>> getRegisterAccess(StaticStmt s)
@@ -968,7 +1000,6 @@ public class DEXParser {
 		/** if-test vA, vB, :cond_0 */
 		else if (stmtIndex >= 50 && stmtIndex <= 55)
 		{
-			String operator = stmt.substring(0, stmt.indexOf(" ")).split("-")[1];
 			String vs[] = stmt.substring(stmt.indexOf(" ")+1).split(", ");
 			String vA = vs[0];
 			String vB = vs[1];
@@ -978,7 +1009,6 @@ public class DEXParser {
 		/** ifz vA, :cond_0 */
 		else if (stmtIndex >= 56 && stmtIndex <= 61)
 		{
-			String operator = stmt.substring(0, stmt.indexOf(" ")).split("-")[1];
 			String vA = stmt.substring(stmt.indexOf(" ")+1, stmt.indexOf(", "));
 			read.add(vA);
 		}

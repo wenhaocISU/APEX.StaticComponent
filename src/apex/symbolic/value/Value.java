@@ -2,55 +2,18 @@ package apex.symbolic.value;
 
 import apex.symbolic.Expression;
 
-public class Value {
+public interface Value {
 
-	Expression expression;
-	String type = "";
+	public Expression getExpression();
 	
-	public Value(Expression ex)
-	{
-		this.expression = ex;
-	}
+	void SetExpression(Expression ex);
 	
-	public Expression getExpression()
-	{
-		return this.expression;
-	}
+	public boolean equals(Value v);
 	
-	void SetExpression(Expression ex)
-	{
-		this.expression = ex;
-	}
+	public void print();
 	
-	public boolean equals(Value v)
-	{
-		return this.getExpression().equals(v.getExpression());
-	}
+	public String toString();
 	
-	public void print()
-	{
-		if (expression != null)
-			System.out.println("     *value " + expression.toYicesStatement());
-		else
-			System.out.println("     *value null");
-		System.out.println("      (" + type + ")");
-	}
+	public Value clone();
 	
-	public String toString()
-	{
-		String result = "";
-		if (expression != null)
-			result += ("     value: " + expression.toYicesStatement() + "\n");
-		else
-			result+= ("     value: null\n");
-		result += ("      (" + type + ")");
-		return result;
-	}
-	
-	public Value clone()
-	{
-		Value result = new Value(this.expression.clone());
-		result.type = this.type;
-		return result;
-	}
 }

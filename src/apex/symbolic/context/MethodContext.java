@@ -6,6 +6,7 @@ import apex.parser.DEXParser;
 import apex.staticFamily.StaticMethod;
 import apex.staticFamily.StaticStmt;
 import apex.symbolic.Expression;
+import apex.symbolic.value.LiteralValue;
 import apex.symbolic.value.ReferenceValue;
 import apex.symbolic.value.Value;
 
@@ -25,24 +26,64 @@ public class MethodContext {
 			Register reg = new Register("v"+i, false);
 			this.registers.add(reg);
 		}
-		int paramIndex = 0;
-		for (int i = 0; i < m.getParamTypes().size(); i++)
+		if (vm.invokeParams.isEmpty())	// no initialization of the parameters
 		{
-			String paramType = m.getParamTypes().get(i);
-			Register reg = new Register("p"+paramIndex++, true);
-			this.registers.add(reg);
-			if (paramType.equals("J") || paramType.equals("D"))
+			int paramIndex = 0;
+			for (int i = 0; i < m.getParamTypes().size(); i++)
 			{
-				Register secondHalf = new Register("p"+paramIndex++, true);
-				secondHalf.isLocked = true;
-				this.registers.add(secondHalf);
+				String paramType = m.getParamTypes().get(i);
+				Register reg = new Register("p"+paramIndex++, true);
+				if (i == 0 && !m.isStatic())
+				{
+					String address = this.vm.createOrFindObjectThis(m.getDeclaringClass().getDexName());
+					ReferenceValue v = new ReferenceValue(new Expression(address), paramType);
+					reg.assign(v);
+				}
+				else
+				{
+					Expression ex = new Expression("$" + reg.name);
+					if (DEXParser.isPrimitiveType(paramType))
+					{
+						LiteralValue v = new LiteralValue(ex, paramType);
+						reg.assign(v);
+					}
+					else
+					{
+						String address = vm.createObject(ex, paramType);
+						ReferenceValue v = new ReferenceValue(new Expression(address), paramType);
+						reg.assign(v);
+					}
+				}
+				this.registers.add(reg);
+				if (paramType.equals("J") || paramType.equals("D"))
+				{
+					Register secondHalf = new Register("p"+paramIndex++, true);
+					secondHalf.isLocked = true;
+					this.registers.add(secondHalf);
+				}
 			}
-			if (i == 0 && !m.isStatic())
+		}
+		else	// since this is a nested invoke, we can initialize the parameters
+		{		// clear the invokeParams field in the end
+			MethodContext outerMC = vm.pop();
+			vm.push(outerMC);
+			int paramRegIndex = 0;
+			for (int i = 0; i < m.getParamTypes().size(); i++)
 			{
-				String address = this.vm.createOrFindObjectThis(m.getDeclaringClass().getDexName());
-				ReferenceValue v = new ReferenceValue(new Expression(address));
-				reg.putValue(v);
+				String paramType = m.getParamTypes().get(i);
+				Register reg = new Register("p"+paramRegIndex, true);
+				Register sourceReg = outerMC.getRegister(vm.invokeParams.get(paramRegIndex));
+				paramRegIndex++;
+				reg.assign(sourceReg.getValue());
+				this.registers.add(reg);
+				if (paramType.equals("J") || paramType.equals("D"))
+				{
+					Register secondHalf = new Register("p"+paramRegIndex++, true);
+					secondHalf.isLocked = true;
+					this.registers.add(secondHalf);
+				}
 			}
+			vm.invokeParams.clear();
 		}
 	}
 	/**
@@ -77,21 +118,22 @@ public class MethodContext {
 		{
 			if (right.getContent().equals("$array"))
 			{
-				String address = this.vm.createObject(right);
-				ReferenceValue arrayRef = new ReferenceValue(new Expression(address));
+				String address = this.vm.createArrayObject(right);
+				String arrayType = "[" + right.getChild(1);
+				ReferenceValue arrayRef = new ReferenceValue(new Expression(address), arrayType);
 				this.putResult(arrayRef.clone());
 			}
 		}
 // $Finstance = vA
 		else if (left.getContent().equals("$Finstance"))
 		{
-			Register sourceReg = this.findRegister(right.getContent());
+			Register sourceReg = this.getRegister(right.getContent());
 			String fieldSig = left.getChild(0).getContent();
 			String objRegName = left.getChild(1).getContent();
-			Register objReg = this.findRegister(objRegName);
+			Register objReg = this.getRegister(objRegName);
 			if (!(objReg.getValue() instanceof ReferenceValue))
 			{
-				System.out.println("$Finstance object register not holding ReferenceValue!");
+				System.out.println("$Finstance object register not holding ReferenceValue at " + s.getUniqueID());
 				System.exit(1);
 			}
 			ReferenceValue objRef = (ReferenceValue)objReg.getValue();
@@ -100,7 +142,7 @@ public class MethodContext {
 // $Fstatic = vA
 		else if (left.getContent().equals("$Fstatic"))
 		{
-			Register sourceReg = this.findRegister(right.getContent());
+			Register sourceReg = this.getRegister(right.getContent());
 			String fieldSig = left.getChild(0).getContent();
 			this.vm.sput(fieldSig, sourceReg.getValue().clone());
 		}
@@ -120,11 +162,22 @@ public class MethodContext {
 	 * 	vA = [arithmatical op]*/
 		else if (right.getContent().startsWith("v"))
 		{
-			
+			Register sourceReg = this.getRegister(right.getContent());
+			this.writeRegister(left.getContent(), sourceReg.getValue());
 		}
 		else if (right.getContent().equals("$Finstance"))
 		{
-			
+			String fieldSig = right.getChild(0).getContent();
+			String objRegName = right.getChild(1).getContent();
+			Register objReg = this.getRegister(objRegName);
+			if (!(objReg.getValue() instanceof ReferenceValue))
+			{
+				System.out.println("$Finstance object register not holding ReferenceValue at " + s.getUniqueID());
+				System.exit(1);
+			}
+			ReferenceValue objRef = (ReferenceValue)objReg.getValue();
+			Value fieldValue = this.vm.iget(objRef, fieldSig);
+			this.writeRegister(left.getContent(), fieldValue.clone());
 		}
 		else if (right.getContent().equals("$Fstatic"))
 		{
@@ -132,11 +185,15 @@ public class MethodContext {
 		}
 		else if (right.getContent().equals("$result"))
 		{
-			
+			this.writeRegister(left.getContent(), this.recentResult.clone());
+			this.recentResult = null;
 		}
 		else if (right.getContent().equals("$number"))
 		{
-			
+			Expression numEx = right.getChild(0);
+			String type = right.getChild(1).getContent();
+			LiteralValue v = new LiteralValue(numEx, type);
+			this.writeRegister(left.getContent(), v);
 		}
 		else if (right.getContent().startsWith("$const"))
 		{
@@ -152,7 +209,10 @@ public class MethodContext {
 		}
 		else if (right.getContent().equals("$new-instance"))
 		{
-			
+			String classDexName = right.getChild(0).getContent();
+			String address = vm.createObject(right.clone(), classDexName);
+			ReferenceValue v = new ReferenceValue(new Expression(address), classDexName);
+			this.writeRegister(left.getContent(), v);
 		}
 		else if (right.getContent().equals("$array"))
 		{
@@ -166,9 +226,23 @@ public class MethodContext {
 		{
 			
 		}
-		else if (DEXParser.isArithmaticalOperator(right.getContent()))
+		else if (DEXParser.isArithmaticalOperator(right.getContent()))	// operation of the literals
 		{
-			
+			Expression result = new Expression(ex.getContent());
+			for (int i = 0; i < right.getChildCount(); i++)
+			{
+				String regName = right.getChild(i).getContent();
+				Value v = this.getRegister(regName).getValue();
+				if (!(v instanceof LiteralValue))
+				{
+					System.out.println("Arithmatical Operation reads non Literal Value at " + s.getUniqueID());
+					System.exit(1);
+				}
+				result.add(v.getExpression().clone());
+			}
+			//TODO need to determine the type
+			LiteralValue v = new LiteralValue(result, "");
+			this.writeRegister(left.getContent(), v);
 		}
 	}
 	
@@ -177,7 +251,7 @@ public class MethodContext {
 		this.recentResult = v;
 	}
 	
-	public Register findRegister(String name)
+	public Register getRegister(String name)
 	{
 		for (Register reg : this.registers)
 		{
@@ -185,6 +259,11 @@ public class MethodContext {
 				return reg;
 		}
 		return null;
+	}
+	
+	public void writeRegister(String destName, Value value)
+	{
+		this.getRegister(destName).assign(value.clone());
 	}
 	
 	public void printSnapshot()

@@ -7,7 +7,6 @@ import java.util.Map;
 import apex.staticFamily.StaticApp;
 import apex.staticFamily.StaticMethod;
 import apex.staticFamily.StaticStmt;
-import apex.symbolic.context.MethodContext;
 import apex.symbolic.context.VMContext;
 
 public class SymbolicExecution {
@@ -24,26 +23,27 @@ public class SymbolicExecution {
 	{
 		List<PathSummary> result = new ArrayList<PathSummary>();
 		List<ToDoPath> pathList = this.generateToDoPaths(m, 0, -1);
-		VMContext vm = new VMContext();
-		MethodContext mc = new MethodContext(m, vm);
-		vm.push(mc);
-		vm.printSnapshot();
 		int id = 0;
 		for (ToDoPath p : pathList)
 		{
+			VMContext vm = new VMContext(this.staticApp);
 			result.add(this.doFullSymbolic(vm, p, m.getSignature(), id++));
 		}
-		vm.printSnapshot();
 		return result;
 	}
 	
 	public PathSummary doFullSymbolic(VMContext vm, ToDoPath p, String methodSig, int id)
 	{
-		PathSummary ps = new PathSummary(methodSig, id);
+		PathSummary ps = new PathSummary(vm, p, methodSig, id);
+		System.out.println("==================== Symbolic Execution No." + p.id);
 		for (int index = 0; index < p.execLog.size(); index++)
 		{
 			String stmtInfo = p.execLog.get(index);
-			if (stmtInfo.contains(",")) //if or switch
+			if (this.debug)
+			{
+				System.out.println(stmtInfo);
+			}
+			if (stmtInfo.contains(",")) //if or switch, need to update path constraint
 			{
 				String choice = stmtInfo.substring(stmtInfo.indexOf(",")+1);
 				stmtInfo = stmtInfo.substring(0, stmtInfo.indexOf(","));
@@ -53,7 +53,7 @@ public class SymbolicExecution {
 					Expression cond = s.getIfJumpCondition();
 					if (choice.equals("flow"))
 						cond = cond.getReverseCondition();
-					ps.updatePathConstraint(vm, cond);
+					ps.updatePathConstraint(cond);
 				}
 				else if (s.isSwitchStmt())
 				{
@@ -61,24 +61,22 @@ public class SymbolicExecution {
 					{
 						for (Expression cond : s.getSwitchFlowThroughConditions())
 						{
-							ps.updatePathConstraint(vm, cond);
+							ps.updatePathConstraint(cond);
 						}
 					}
 					else if (choice.startsWith("case"))
 					{
 						int caseValue = Integer.parseInt(choice.replace("case", ""));
-						ps.updatePathConstraint(vm, s.getSwitchCaseCondition(caseValue));
+						ps.updatePathConstraint(s.getSwitchCaseCondition(caseValue));
 					}
 				}
 			}
-			else
+			else	// this statement might change registers or objects
 			{
 				StaticStmt s = staticApp.getStmt(stmtInfo);
 				vm.applyOperation(s);
 			}
 		}
-		ps.setExecutionLog(p.execLog);
-		ps.setSymbolicStates(vm);
 		return ps;
 	}
 	
@@ -103,14 +101,9 @@ public class SymbolicExecution {
 		ArrayList<ToDoPath> unfinished = new ArrayList<ToDoPath>();
 		ToDoPath tdP = new ToDoPath(startingStmtID, endingStmtID);
 		unfinished.add(tdP);
-		int counter = 1;
 		while (unfinished.size() > 0)
 		{
 			ToDoPath p = unfinished.remove(unfinished.size()-1);
-			if (debug)
-			{
-				System.out.println("=============== symbolic execution " + m.getSignature() + " No." + counter++);
-			}
 			ArrayList<ToDoPath> finishedTDPs = exploreTDP(unfinished, p, m);
 			if (p.isLegit)
 				result.addAll(finishedTDPs);
@@ -125,14 +118,9 @@ public class SymbolicExecution {
 		ArrayList<ToDoPath> unfinished = new ArrayList<ToDoPath>();
 		ToDoPath tdP = new ToDoPath(startingStmtID, endingStmtID);
 		unfinished.add(tdP);
-		int counter = 1;
 		while (unfinished.size() > 0)
 		{
 			ToDoPath p = unfinished.remove(unfinished.size()-1);
-			if (print)
-			{
-				System.out.println("=============== symbolic execution " + m.getSignature() + " No." + counter++);
-			}
 			ArrayList<ToDoPath> finishedTDPs = exploreTDP(unfinished, p, m);
 			if (p.isLegit)
 				result.addAll(finishedTDPs);
@@ -155,10 +143,6 @@ public class SymbolicExecution {
 			{
 				System.out.println("SymbolicExecution.exploreTDP() ran into null StaticStmt.");
 				System.exit(1);
-			}
-			if (debug)
-			{
-				System.out.println("Stmt: " + s.getUniqueID());
 			}
 			for (ToDoPath tdP : result)
 				tdP.execLog.add(s.getUniqueID());
@@ -299,6 +283,7 @@ public class SymbolicExecution {
 			if (!choices.contains(choice))
 			{
 				choices.add(choice);
+				p.id = newResult.size();
 				newResult.add(p);
 			}
 		}

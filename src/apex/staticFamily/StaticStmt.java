@@ -1,6 +1,7 @@
 package apex.staticFamily;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -267,6 +268,37 @@ public class StaticStmt {
 		return DEXParser.getIfJumpCondition(this);
 	}
 	
+	public ArrayList<String> getInvokeParameters()
+	{
+		if (!this.isInvokeStmt())
+			return null;
+		String stmt = this.smaliStmt;
+		String params = stmt.substring(stmt.indexOf("{")+1, stmt.indexOf("}"));
+		ArrayList<String> result = new ArrayList<String>();
+		if (params.contains(", "))
+		{
+			result.addAll(Arrays.asList(params.split(", ")));
+		}
+		else if (params.contains(" .. "))
+		{
+			String firstV = params.substring(0, params.indexOf(" .. "));
+			String lastV = params.substring(params.indexOf(" .. ")+4);
+			String prefix = firstV.substring(0, 1);
+			int first = Integer.parseInt(firstV.substring(1));
+			int last = Integer.parseInt(lastV.substring(1));
+			while (first <= last)
+			{
+				result.add(prefix + first);
+				first++;
+			}
+		}
+		else if (!params.equals(""))
+		{
+			result.add(params);
+		}
+		return result;
+	}
+	
 	public ArrayList<Expression> getSwitchFlowThroughConditions()
 	{
 		ArrayList<Expression> result = new ArrayList<Expression>();
@@ -347,6 +379,14 @@ public class StaticStmt {
 			}
 		}
 		return switchMap;
+	}
+	
+	public String getReturnedVariable()
+	{
+		if (!this.isReturnStmt() || this.smaliStmt.equals("return-void"))
+			return "";
+		String vA = this.smaliStmt.substring(this.smaliStmt.indexOf(" ")+1);
+		return vA;
 	}
 
 }
