@@ -9,10 +9,11 @@ public class LiteralValue implements Value{
 	
 	public LiteralValue(Expression ex, String type)
 	{
-		this.expression = ex;
+		this.expression = ex.clone();
 		this.type = type;
 	}
 	
+	@Override
 	public String getType()
 	{
 		return this.type;
@@ -62,6 +63,11 @@ public class LiteralValue implements Value{
 	public LiteralValue clone()
 	{
 		return new LiteralValue(this.expression.clone(), this.type);
+	}
+
+	@Override
+	public void setType(String type) {
+		this.type = type;
 	}
 	
 }

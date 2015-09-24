@@ -8,6 +8,10 @@ public interface Value {
 	
 	void SetExpression(Expression ex);
 	
+	public String getType();
+	
+	public void setType(String type);
+	
 	public boolean equals(Value v);
 	
 	public void print();

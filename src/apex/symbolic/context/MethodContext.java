@@ -49,7 +49,7 @@ public class MethodContext {
 					}
 					else
 					{
-						String address = vm.createObject(ex, paramType);
+						String address = vm.createObject(ex, paramType, true);
 						ReferenceValue v = new ReferenceValue(new Expression(address), paramType);
 						reg.assign(v);
 					}
@@ -86,6 +86,7 @@ public class MethodContext {
 			vm.invokeParams.clear();
 		}
 	}
+	
 	/**
 	 * Parse statement, and apply corresponding operations
 	 * on method context and/or vm context.
@@ -181,7 +182,9 @@ public class MethodContext {
 		}
 		else if (right.getContent().equals("$Fstatic"))
 		{
-			
+			String fieldSig = right.getChild(0).getContent();
+			Value fieldValue = this.vm.sget(fieldSig);
+			this.writeRegister(left.getContent(), fieldValue.clone());
 		}
 		else if (right.getContent().equals("$result"))
 		{
@@ -195,54 +198,86 @@ public class MethodContext {
 			LiteralValue v = new LiteralValue(numEx, type);
 			this.writeRegister(left.getContent(), v);
 		}
-		else if (right.getContent().startsWith("$const"))
+		else if (right.getContent().equals("$const-class"))
 		{
-			
+			LiteralValue v = new LiteralValue(right.getChild(0).clone(), "const-class");
+			this.writeRegister(left.getContent(), v);
+		}
+		else if (right.getContent().equals("$const-string"))
+		{
+			//TODO string objects
 		}
 		else if (right.getContent().equals("$instance-of"))
-		{
-			
+		{	// Just gonna try to solve it right here
+			Expression instance = right.getChild(0);
+			String targetType = right.getChild(1).getContent();
+			String thisType = this.getRegister(instance.getContent()).getValue().getType();
+			if (thisType.equals(targetType))
+			{
+				this.writeRegister(left.getContent(), new LiteralValue(new Expression("1"), "Z"));
+			}
+			else
+			{
+				this.writeRegister(left.getContent(), new LiteralValue(new Expression("0"), "Z"));
+			}
 		}
 		else if (right.getContent().equals("$array-length"))
 		{
-			
+			//TODO array length
 		}
 		else if (right.getContent().equals("$new-instance"))
 		{
 			String classDexName = right.getChild(0).getContent();
-			String address = vm.createObject(right.clone(), classDexName);
+			String address = vm.createObject(right.clone(), classDexName, true);
 			ReferenceValue v = new ReferenceValue(new Expression(address), classDexName);
 			this.writeRegister(left.getContent(), v);
 		}
 		else if (right.getContent().equals("$array"))
 		{
-			
+			//TODO array initiation
 		}
 		else if (right.getContent().equals("$aget"))
 		{
-			
+			//TODO aget
 		}
 		else if (right.getContent().equals("$aput"))
 		{
-			
+			//TODO aput
 		}
 		else if (DEXParser.isArithmaticalOperator(right.getContent()))	// operation of the literals
 		{
-			Expression result = new Expression(ex.getContent());
-			for (int i = 0; i < right.getChildCount(); i++)
+			if (right.getContent().equals("to"))	// this one has 2 op fields
 			{
-				String regName = right.getChild(i).getContent();
-				Value v = this.getRegister(regName).getValue();
-				if (!(v instanceof LiteralValue))
-				{
-					System.out.println("Arithmatical Operation reads non Literal Value at " + s.getUniqueID());
-					System.exit(1);
-				}
-				result.add(v.getExpression().clone());
+				String srcReg = right.getChild(0).getContent();
+				String type = right.getChild(1).getContent();
+				LiteralValue v = new LiteralValue(this.getRegister(srcReg).getValue().getExpression(), type);
+				this.writeRegister(left.getContent(), v);
 			}
-			//TODO need to determine the type
-			LiteralValue v = new LiteralValue(result, "");
-			this.writeRegister(left.getContent(), v);
+			else	// the rest has 3 op fields
+			{
+				Expression result = new Expression(ex.getContent());
+				for (int i = 0; i < 2; i++)
+				{
+					String regName = right.getChild(i).getContent();
+					if (!regName.startsWith("v") && !regName.startsWith("p"))
+					{
+						Value v = this.getRegister(regName).getValue();
+						if (!(v instanceof LiteralValue))
+						{
+							System.out.println("Arithmatical Operation reads non Literal Value at " + s.getUniqueID());
+							System.exit(1);
+						}
+						result.add(v.getExpression().clone());
+					}
+					else
+					{
+						result.add(right.getChild(i).clone());
+					}
+				}
+				String type = right.getChild(2).getContent();
+				LiteralValue v = new LiteralValue(result, type);
+				this.writeRegister(left.getContent(), v);
+			}
 		}
 	}
 	
@@ -259,6 +294,11 @@ public class MethodContext {
 				return reg;
 		}
 		return null;
+	}
+	
+	public ArrayList<Register> getRegisters()
+	{
+		return this.registers;
 	}
 	
 	public void writeRegister(String destName, Value value)

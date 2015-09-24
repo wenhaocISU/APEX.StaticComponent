@@ -9,7 +9,7 @@ public class ReferenceValue implements Value {
 	
 	public ReferenceValue(Expression address, String type)
 	{
-		this.expression = address;
+		this.expression = address.clone();
 		this.type = type;
 	}
 	
@@ -18,6 +18,7 @@ public class ReferenceValue implements Value {
 		return this.expression.getContent();
 	}
 	
+	@Override
 	public String getType()
 	{
 		return this.type;
@@ -68,6 +69,11 @@ public class ReferenceValue implements Value {
 	{
 		ReferenceValue result = new ReferenceValue(this.expression.clone(), this.type);
 		return result;
+	}
+
+	@Override
+	public void setType(String type) {
+		this.type = type;
 	}
 	
 }

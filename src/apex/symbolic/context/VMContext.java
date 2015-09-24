@@ -46,18 +46,21 @@ public class VMContext {
 	 * as: $this-Lcom/my/Class;. Returns the object's
 	 * address
 	 * */
-	public String createObject(Expression ex, String classDexName)
+	public String createObject(Expression ex, String classDexName, boolean createInstanceFields)
 	{
 		SymbolicObject obj = new SymbolicObject(this.objects.size(), ex);
 		this.objects.add(obj);
-		StaticClass c = this.staticApp.getClassByDexName(classDexName);
-		if (c != null)
+		if (createInstanceFields)
 		{
-			for (StaticField f : c.getFields())
+			StaticClass c = this.staticApp.getClassByDexName(classDexName);
+			if (c != null)
 			{
-				if (f.isStatic())
-					continue;
-				this.initializeField(obj, f);
+				for (StaticField f : c.getFields())
+				{
+					if (f.isStatic())
+						continue;
+					this.initializeField(obj, f);
+				}
 			}
 		}
 		return obj.getAddress();
@@ -75,7 +78,7 @@ public class VMContext {
 		}
 		else
 		{
-			String address = this.createObject(fieldEx, f.getType());
+			String address = this.createObject(fieldEx, f.getType(), true);
 			ReferenceValue v = new ReferenceValue(new Expression(address), f.getType());
 			obj.putField(f.getSignature(), v);
 		}
@@ -94,7 +97,7 @@ public class VMContext {
 		}
 		else
 		{
-			String address = this.createObject(fieldEx, fieldType);
+			String address = this.createObject(fieldEx, fieldType, true);
 			ReferenceValue v = new ReferenceValue(new Expression(address), fieldType);
 			obj.putField(fieldSig, v);
 		}
@@ -129,7 +132,7 @@ public class VMContext {
 		String address = this.getAddressOfObject(thisEx);
 		if (address.equals(""))
 		{
-			address = this.createObject(thisEx, classDexName);
+			address = this.createObject(thisEx, classDexName, true);
 		}
 		return address;
 	}
@@ -213,9 +216,36 @@ public class VMContext {
 		String address = this.getAddressOfObject(staticClassEx);
 		if (address.equals(""))
 		{
-			address = this.createObject(staticClassEx, className);
+			address = this.createObject(staticClassEx, className, false);
 		}
 		this.getObject(address).putField(fieldSig, value);
+	}
+	
+	public Value sget(String fieldSig)
+	{
+		String className = fieldSig.split("->")[0];
+		Expression staticClassEx = new Expression("$static-fields");
+		staticClassEx.add(className);
+		String address = this.getAddressOfObject(staticClassEx);
+		Expression fieldEx = new Expression("$Fstatic");
+		fieldEx.add(fieldSig);
+		if (address.equals(""))
+		{
+			address = this.createObject(staticClassEx, className, false);
+			String fieldType = fieldSig.substring(fieldSig.lastIndexOf(":")+1);
+			if (DEXParser.isPrimitiveType(fieldType))
+			{
+				LiteralValue v = new LiteralValue(fieldEx, fieldType);
+				this.getObject(address).putField(fieldSig, v);
+			}
+			else
+			{
+				String fieldAddr = this.createObject(fieldEx, fieldType, true);
+				ReferenceValue v = new ReferenceValue(new Expression(fieldAddr), fieldType);
+				this.getObject(address).putField(fieldSig, v);
+			}
+		}
+		return this.getObject(address).getField(fieldSig);
 	}
 	
 	public String createArrayObject(Expression arrayEx)

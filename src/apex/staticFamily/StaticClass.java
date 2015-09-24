@@ -3,6 +3,7 @@ package apex.staticFamily;
 import java.util.ArrayList;
 import java.util.List;
 
+import apex.instrumentor.Blacklist;
 import apex.instrumentor.Instrumentor;
 
 
@@ -235,15 +236,13 @@ public class StaticClass {
 		return result;
 	}
 	
-	public void instrument(Instrumentor instrumentor)
+	public void instrument(StaticApp staticApp, Instrumentor instrumentor)
 	{
-		if (this.getDexName().endsWith("ViewPager;"))
-		{
-			System.out.println("");
-		}
 		for (StaticMethod m : this.methods)
 		{
-			m.instrument(this, instrumentor);
+			if (instrumentor.blackListOn && Blacklist.methodInBlackList(m.getSignature()))
+				continue;
+			m.instrument(staticApp, instrumentor);
 		}
 	}
 	

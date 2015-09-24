@@ -4,6 +4,12 @@ import java.util.ArrayList;
 import java.util.List;
 
 import apex.instrumentor.Instrumentor;
+import apex.symbolic.PathSummary;
+import apex.symbolic.SymbolicExecution;
+import apex.symbolic.ToDoPath;
+import apex.symbolic.context.MethodContext;
+import apex.symbolic.context.Register;
+import apex.symbolic.context.VMContext;
 
 
 public class StaticMethod {
@@ -228,16 +234,16 @@ public class StaticMethod {
 		}
 	}
 	
-	public void instrument(StaticClass c, Instrumentor instrumentor)
+	public void instrument(StaticApp staticApp, Instrumentor instrumentor)
 	{
 		for (StaticStmt s : this.statements)
 		{
-			instrumentor.instrumentStmt(c, this, s);
+			instrumentor.instrumentStmt(staticApp, s);
 		}
 	}
 	
 
-	public String findUsableRegister(StaticStmt s)
+	public String findUsableRegister(StaticApp staticApp, StaticStmt s)
 	{
 		if (this.localRegisterCount < 0)
 			return "";
@@ -283,37 +289,33 @@ public class StaticMethod {
 		}
 		// Now we have branch statements, try block statements
 		// that are not the first statement of the method
-		// We have to do a simple symbolic execution
-		boolean finished = false;
-		StaticStmt currentStmt = s;
-		ArrayList<String> reg_read = new ArrayList<String>();
-		ArrayList<String> reg_write = new ArrayList<String>();
-		//while (!finished)
+		// see if this statement writes stuff
+		for (String write : s.getRegsToWrite())
 		{
-			//First, collect all exec log from current stmt to return/throw
-			//	for each exec_log:
-			//		for each statement:
-			//			update reg_read and reg_write;
-			//			if contains writing of a register and it's not in reg_read
-			//			then
-			//				this reg is the one;
-			//				NOTE(Sep21): no need to know the type because it's safe to write
-			//				break;
-			//			end if
-			//		end for
-			//		if found a reg
-			//			break;
-			//	end for
-			///////////////////////////
-			//	If previous step fails, find one exec log from start to current stmt
-			//	do symbolic execution from this exec log
-			//	find the first register that isn't empty
-			//	get its name and type
-			//TODO API: get exec log from a given index, to an end index
-			//TODO API: given an exec log, do symbolic execution
+			if (!s.getRegsToRead().contains(write))
+			{
+				return write;
+			}
 		}
-		
-		return "";
+		// Now we can't use the registers from this statement,
+		// have to do a simple symbolic execution
+		SymbolicExecution sex = new SymbolicExecution(staticApp);
+		sex.debug = false;
+		ArrayList<ToDoPath> tdP = sex.generateToDoPaths(this, 0, s.getStatementID());
+		for (ToDoPath p : tdP)
+		{
+			PathSummary ps = sex.doFullSymbolic(new VMContext(staticApp), p, this.getSignature(), -1);
+			MethodContext mc = ps.getVMContext().pop();
+			for (Register reg : mc.getRegisters())
+			{
+				if (reg.getValue() != null && !reg.getValue().getType().equals("")
+						&& !reg.getValue().getType().equals("const-class"))
+				{
+					return reg.getName()+":"+reg.getValue().getType();
+				}
+			}
+		}
+		return "v0";
 	}
 	
 	

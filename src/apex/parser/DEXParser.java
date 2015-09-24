@@ -270,7 +270,7 @@ public class DEXParser {
 				new String[]
 				{
 					"not", "neg", "add", "sub", "rsub", "mul", "div",
-					"rem", "and", "or", "xor", "shl", "shr", "ushr"
+					"rem", "and", "or", "xor", "shl", "shr", "ushr", "to"
 				}
 			)
 		);
@@ -287,6 +287,28 @@ public class DEXParser {
 					}
 				)
 			);
+	
+	public static String javaToDexType(String type)
+	{
+		switch (type)
+		{
+		case "V": return "void";
+		case "Z": return "boolean";
+		case "B": return "byte";
+		case "S": return "short";
+		case "C": return "char";
+		case "I": return "int";
+		case "J": return "long";
+		case "F": return "float";
+		case "D": return "double";
+		}
+		if (type.startsWith("L") && type.endsWith(";"))
+		{
+			return type.substring(1, type.length()-1).replace("/", ".");
+		}
+		return type;
+	}
+	
 	
 	public static Expression generateExpression(StaticStmt s)
 	{
@@ -672,27 +694,35 @@ public class DEXParser {
 		else if (stmtIndex >= 115 && stmtIndex <= 120)
 		{
 			String operator = stmt.substring(0, stmt.indexOf("-"));
+			String type = stmt.substring(stmt.indexOf("-")+1, stmt.indexOf(" "));
 			String vs[] = stmt.substring(stmt.indexOf(" " )+1).split(", ");
 			String vA = vs[0];
 			String vB = vs[1];
 			Expression opEx = new Expression(operator);
 			opEx.add(vB);
+			opEx.add(DEXParser.javaToDexType(type));
 			ex.add(vA);
 			ex.add(opEx);
 		}
 		/** primitive type conversion */
 		else if (stmtIndex >= 121 && stmtIndex <= 135)
 		{
+			String operator = stmt.substring(0, stmt.indexOf(" "));
+			String type = operator.split("-")[2];
 			String vs[] = stmt.substring(stmt.indexOf(" " )+1).split(", ");
 			String vA = vs[0];
 			String vB = vs[1];
+			Expression opEx = new Expression("to");
+			opEx.add(vB);
+			opEx.add(DEXParser.javaToDexType(type));
 			ex.add(vA);
-			ex.add(vB);
+			ex.add(opEx);
 		}
 		/** binop operation (3 addresses: a = b op c) */
 		else if (stmtIndex >= 136 && stmtIndex <= 167)
 		{
 			String operator = stmt.substring(0, stmt.indexOf("-"));
+			String type = stmt.substring(stmt.indexOf("-")+1, stmt.indexOf(" "));
 			String vs[] = stmt.substring(stmt.indexOf(" " )+1).split(", ");
 			String vA = vs[0];
 			String vB = vs[1];
@@ -700,6 +730,7 @@ public class DEXParser {
 			Expression opEx = new Expression(operator);
 			opEx.add(vB);
 			opEx.add(vC);
+			opEx.add(DEXParser.javaToDexType(type));
 			ex.add(vA);
 			ex.add(opEx);
 		}
@@ -707,12 +738,14 @@ public class DEXParser {
 		else if (stmtIndex >= 168 && stmtIndex <= 199)
 		{
 			String operator = stmt.substring(0, stmt.indexOf("-"));
+			String type = stmt.substring(stmt.indexOf("-")+1, stmt.indexOf("/"));
 			String vs[] = stmt.substring(stmt.indexOf(" " )+1).split(", ");
 			String vA = vs[0];
 			String vB = vs[1];
 			Expression opEx = new Expression(operator);
 			opEx.add(vA);
 			opEx.add(vB);
+			opEx.add(DEXParser.javaToDexType(type));
 			ex.add(vA);
 			ex.add(opEx);
 		}
@@ -728,12 +761,10 @@ public class DEXParser {
 			String vB = vs[1];
 			String intLiteral = vs[2];
 			String dec = Integer.parseInt(intLiteral.replace("0x", ""), 16) + "";
-			Expression litEx = new Expression("$number");
-			litEx.add(dec);
-			litEx.add("I");
 			Expression opEx = new Expression(operator);
 			opEx.add(vB);
-			opEx.add(litEx);
+			opEx.add(dec);
+			opEx.add("I");
 			ex.add(vA);
 			ex.add(opEx);
 		}

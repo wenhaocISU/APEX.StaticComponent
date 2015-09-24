@@ -7,6 +7,7 @@ import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.List;
 
+import apex.instrumentor.Blacklist;
 import apex.instrumentor.Instrumentor;
 import tools.Apktool;
 import tools.Jarsigner;
@@ -45,13 +46,20 @@ public class StaticApp {
 	{
 		System.out.println("Instrumenting...");
 		Instrumentor instrumentor = new Instrumentor();
+		instrumentor.addSmaliFile(
+				new File("libs"+File.separator+"Println.smali"),
+				this.dataFolder+"apktool"+File.separator+"smali"
+				+File.separator+"apex"+File.separator+"instrumented"
+				+File.separator+"Println.smali");
 		for (StaticClass c : this.classes)
 		{
+			if (instrumentor.blackListOn && Blacklist.classInBlackList(c.getDexName()))
+				continue;
 			File smaliFile = new File(c.getInstrumentedSmaliPath());
 			smaliFile.getParentFile().mkdirs();
 			try
 			{
-				c.instrument(instrumentor);
+				c.instrument(this, instrumentor);
 				PrintWriter out = new PrintWriter(new FileWriter(smaliFile));
 				ArrayList<String> newSmali = c.getInstrumentedBody();
 				for (String s : newSmali)

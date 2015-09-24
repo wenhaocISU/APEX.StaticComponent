@@ -21,9 +21,14 @@ public class Register {
 		this.isLocked = false;
 	}
 	
-	Value getValue()
+	public Value getValue()
 	{
 		return this.value;
+	}
+	
+	public String getName()
+	{
+		return this.name;
 	}
 	
 	

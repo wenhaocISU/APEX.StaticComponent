@@ -117,6 +117,7 @@ public class StaticStmt {
 		return this.debugInfo.getPreStmtSection();
 	}
 	
+	
 	public ArrayList<String> getPostStmtDebugInfo()
 	{
 		return this.debugInfo.getPostStmtSection();
@@ -154,19 +155,19 @@ public class StaticStmt {
 	public ArrayList<String> getInstrumentedBody()
 	{
 		ArrayList<String> result = new ArrayList<String>();
+		result.addAll(this.getPreStmtDebugInfo());
 		if (!this.getInstrumentedPrecedingStmts().isEmpty())
 		{
 			result.addAll(this.getInstrumentedPrecedingStmts());
 			result.add("");
 		}
-		result.addAll(this.getPreStmtDebugInfo());
+		result.add("    #id " + this.id);
 		result.add("    " + this.smaliStmt);
 		result.addAll(this.getPostStmtDebugInfo());
 		if (!this.getInstrumentedSucceedingStmts().isEmpty())
 		{
 			result.add("");
 			result.addAll(this.getInstrumentedSucceedingStmts());
-			result.add("");
 		}
 		return result;
 	}

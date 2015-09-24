@@ -34,6 +34,11 @@ public class PathSummary {
 		this.executionLog = new ArrayList<String>(execLog);
 	}
 	
+	public VMContext getVMContext()
+	{
+		return this.vm;
+	}
+	
 	public boolean endsWithThrow()
 	{
 		return this.vm.endsWithThrow();
