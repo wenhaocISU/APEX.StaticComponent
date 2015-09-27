@@ -31,6 +31,14 @@ public class Register {
 		return this.name;
 	}
 	
+	public Register clone()
+	{
+		Register result = new Register(this.name, this.isParameter);
+		result.value = this.value.clone();
+		result.isLocked = this.isLocked;
+		return result;
+	}
+	
 	
 	public void printSnapshot()
 	{

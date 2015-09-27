@@ -1,8 +1,13 @@
 package apex.symbolic;
 
+import java.text.NumberFormat;
 import java.util.ArrayList;
+import java.util.Map;
 
 import apex.symbolic.context.VMContext;
+import apex.symbolic.object.SymbolicObject;
+import apex.symbolic.value.LiteralValue;
+import apex.symbolic.value.ReferenceValue;
 import apex.symbolic.value.Value;
 
 public class PathSummary {
@@ -11,14 +16,15 @@ public class PathSummary {
 	private int id;
 	
 	private VMContext vm;
+	private ToDoPath p;
 	private ArrayList<String> executionLog = new ArrayList<String>();
 	private ArrayList<Expression> pathCondition = new ArrayList<Expression>();
-	private ArrayList<Value> symbolicStates = new ArrayList<Value>();
-	
-	
+
+		
 	public PathSummary(VMContext vm, ToDoPath p, String methodSig, int id)
 	{
 		this.vm = vm;
+		this.p = p;
 		this.setExecutionLog(p.execLog);
 		this.methodSignature = methodSig;
 		this.id = id;
@@ -34,14 +40,155 @@ public class PathSummary {
 		this.executionLog = new ArrayList<String>(execLog);
 	}
 	
+	void setPathCondition(ArrayList<Expression> pathConditions)
+	{
+		this.pathCondition = new ArrayList<Expression>();
+		for (Expression ex : pathConditions)
+		{
+			this.pathCondition.add(ex.clone());
+		}
+	}
+	
+	public ArrayList<String> getExecutionLog()
+	{
+		return this.executionLog;
+	}
+	
+	public ArrayList<Expression> getPathConditions()
+	{
+		return this.pathCondition;
+	}
+	
 	public VMContext getVMContext()
 	{
 		return this.vm;
 	}
+		
+	/**
+	 * Return a PathSummary that is the concatenation of the two PathSummaries.
+	 * Equivalent to performing a symbolic execution on the new
+	 * execution log starting from the old VMContext.
+	 * */
+	public PathSummary concat(PathSummary ps)
+	{
+		SymbolicExecution sex = new SymbolicExecution(this.vm.getStaticApp());
+		String concatSig = this.methodSignature + " concat " + ps.methodSignature;
+		PathSummary result = sex.doFullSymbolic(this.vm.copy(), ps.p, this.pathCondition, concatSig, this.id + ps.id);
+		result.executionLog = new ArrayList<String>(this.executionLog);
+		result.executionLog.addAll(ps.executionLog);
+		return result;
+	}
+	
+	/**
+	 * Return whether current PathSummary is relevant to the
+	 * Path Conditions of the PathSummary parameter.
+	 * */
+	public boolean isRelevantToConstraint(PathSummary ps)
+	{
+		for (Expression cond : ps.pathCondition)
+		{
+			for (int i = 0; i < cond.getChildCount(); i++)
+			{
+				Expression child = cond.getChild(i);
+				// use this as symbolic value, find its concrete value
+				// if not the same, then 
+			}
+		}
+		return false;
+	}
+	
+	public ArrayList<Expression> getSymbolicStates()
+	{
+		ArrayList<Expression> result = new ArrayList<Expression>();
+		for (SymbolicObject obj : this.vm.getSymbolicObjects())
+		{
+			Expression objEx = obj.getExpression();
+			if (objEx.getContent().equals("$this") || 
+					objEx.getContent().startsWith("$p") ||
+					objEx.getContent().equals("$static-fields"))
+			{
+				Map<String, Value> fields = obj.getFields();
+				for (Map.Entry<String, Value> entry : fields.entrySet())
+				{
+					reportFieldState(result, entry, objEx);
+				}
+			}
+		}
+		return result;
+	}
+	
+	/**
+	 * Each field has its unique signature, which is called "symbolic state".
+	 * If a field has a value that is different from its symbolic state, then
+	 * it will be reported into PathSummary's Symbolic States.
+	 * */
+	private void reportFieldState(ArrayList<Expression> result, Map.Entry<String, Value> entry, Expression objSymbolicExpression)
+	{
+		Expression symbolicState = new Expression("$Finstance");
+		symbolicState.add(entry.getKey());
+		symbolicState.add(objSymbolicExpression.clone());
+		if (objSymbolicExpression.getContent().equals("$static-fields"))
+		{
+			symbolicState = new Expression("$Fstatic");
+			symbolicState.add(entry.getKey());
+		}
+		if (entry.getValue() instanceof LiteralValue)
+		{
+			Expression concreteState = entry.getValue().getExpression();
+			if (!concreteState.equals(symbolicState))
+			{
+				Expression out = new Expression("=");
+				out.add(symbolicState.clone());
+				out.add(concreteState.clone());
+				result.add(out);
+			}
+		}
+		else if (entry.getValue() instanceof ReferenceValue)
+		{
+			SymbolicObject fieldObj = this.vm.getObject(entry.getValue().getExpression().getContent());
+			Expression concreteState = fieldObj.getExpression();
+			if (!concreteState.equals(symbolicState))
+			{
+				Expression out = new Expression("=");
+				out.add(symbolicState.clone());
+				out.add(concreteState.clone());
+				result.add(out);
+			}
+			for (Map.Entry<String, Value> nextLevelEntry : fieldObj.getFields().entrySet())
+			{
+				String fieldSig = nextLevelEntry.getKey();
+				Expression nextLevelSymbolicState = new Expression("$Finstance");
+				nextLevelSymbolicState.add(fieldSig);
+				nextLevelSymbolicState.add(symbolicState.clone());
+				if (objSymbolicExpression.getContent().equals("$static-fields"))
+				{
+					nextLevelSymbolicState = new Expression("$Fstatic");
+					nextLevelSymbolicState.add(entry.getKey());
+				}
+				reportFieldState(result, nextLevelEntry, nextLevelSymbolicState);
+			}
+		}
+	}	
 	
 	public boolean endsWithThrow()
 	{
 		return this.vm.endsWithThrow();
+	}
+	
+	public void printVMContext()
+	{
+		this.vm.printSnapshot();
+	}
+	
+	
+	public PathSummary clone()
+	{
+		PathSummary result = new PathSummary(this.vm.clone(), this.p.clone(), this.methodSignature, this.id);
+		for (Expression cond : this.pathCondition)
+		{
+			result.pathCondition.add(cond.clone());
+		}
+		return result;
 	}
 	
 	public void print()
@@ -51,8 +198,8 @@ public class PathSummary {
 		for (String s : this.executionLog)
 			System.out.println(" " + s);
 		System.out.println("Symbolic States:");
-		for (Value v : this.symbolicStates)
-			System.out.println(" " + v.getExpression().toYicesStatement());
+		for (Expression ex : this.getSymbolicStates())
+			System.out.println(" " + ex.toYicesStatement());
 		System.out.println("Path Conditions:");
 		for (Expression cond : this.pathCondition)
 			System.out.println(" " + cond.toYicesStatement());

@@ -14,8 +14,11 @@ public class MethodContext {
 
 	ArrayList<Register> registers = new ArrayList<Register>();
 	Value recentResult;
-	private VMContext vm;
+	VMContext vm;
 	private StaticMethod m;
+	
+	private MethodContext()
+	{};
 	
 	public MethodContext(StaticMethod m, VMContext vm)
 	{
@@ -164,7 +167,7 @@ public class MethodContext {
 		else if (right.getContent().startsWith("v"))
 		{
 			Register sourceReg = this.getRegister(right.getContent());
-			this.writeRegister(left.getContent(), sourceReg.getValue());
+			this.writeRegister(left.getContent(), sourceReg.getValue().clone());
 		}
 		else if (right.getContent().equals("$Finstance"))
 		{
@@ -228,7 +231,7 @@ public class MethodContext {
 		else if (right.getContent().equals("$new-instance"))
 		{
 			String classDexName = right.getChild(0).getContent();
-			String address = vm.createObject(right.clone(), classDexName, true);
+			String address = vm.createNewInstance(right.clone(), classDexName, true);
 			ReferenceValue v = new ReferenceValue(new Expression(address), classDexName);
 			this.writeRegister(left.getContent(), v);
 		}
@@ -313,12 +316,30 @@ public class MethodContext {
 		{
 			reg.printSnapshot();
 		}
-		
 	}
 	
 	public StaticMethod getStaticMethod()
 	{
 		return this.m;
+	}
+	
+	public MethodContext clone()
+	{
+		MethodContext result = new MethodContext();
+		
+		for (Register reg : this.registers)
+		{
+			result.registers.add(reg.clone());
+		}
+		
+		if (this.recentResult == null)
+			result.recentResult = null;
+		else
+			result.recentResult = this.recentResult.clone();
+		
+		result.m = this.m;
+		
+		return result;
 	}
 	
 }

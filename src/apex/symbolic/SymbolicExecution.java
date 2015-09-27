@@ -35,13 +35,60 @@ public class SymbolicExecution {
 	public PathSummary doFullSymbolic(VMContext vm, ToDoPath p, String methodSig, int id)
 	{
 		PathSummary ps = new PathSummary(vm, p, methodSig, id);
-		System.out.println("==================== Symbolic Execution No." + p.id);
 		for (int index = 0; index < p.execLog.size(); index++)
 		{
 			String stmtInfo = p.execLog.get(index);
 			if (this.debug)
 			{
-				System.out.println(stmtInfo);
+				System.out.println("\n\n[" + stmtInfo + "]");
+			}
+			if (stmtInfo.contains(",")) //if or switch, need to update path constraint
+			{
+				String choice = stmtInfo.substring(stmtInfo.indexOf(",")+1);
+				stmtInfo = stmtInfo.substring(0, stmtInfo.indexOf(","));
+				StaticStmt s = staticApp.getStmt(stmtInfo);
+				if (s.isIfStmt())
+				{
+					Expression cond = s.getIfJumpCondition();
+					if (choice.equals("flow"))
+						cond = cond.getReverseCondition();
+					ps.updatePathConstraint(cond);
+				}
+				else if (s.isSwitchStmt())
+				{
+					if (choice.equals("flow"))
+					{
+						for (Expression cond : s.getSwitchFlowThroughConditions())
+						{
+							ps.updatePathConstraint(cond);
+						}
+					}
+					else if (choice.startsWith("case"))
+					{
+						int caseValue = Integer.parseInt(choice.replace("case", ""));
+						ps.updatePathConstraint(s.getSwitchCaseCondition(caseValue));
+					}
+				}
+			}
+			else	// this statement might change registers or objects
+			{
+				StaticStmt s = staticApp.getStmt(stmtInfo);
+				vm.applyOperation(s);
+			}
+		}
+		return ps;
+	}
+	
+	public PathSummary doFullSymbolic(VMContext vm, ToDoPath p, ArrayList<Expression> pathConditions, String methodSig, int id)
+	{
+		PathSummary ps = new PathSummary(vm, p, methodSig, id);
+		ps.setPathCondition(pathConditions);
+		for (int index = 0; index < p.execLog.size(); index++)
+		{
+			String stmtInfo = p.execLog.get(index);
+			if (this.debug)
+			{
+				System.out.println("\n\n[" + stmtInfo + "]");
 			}
 			if (stmtInfo.contains(",")) //if or switch, need to update path constraint
 			{

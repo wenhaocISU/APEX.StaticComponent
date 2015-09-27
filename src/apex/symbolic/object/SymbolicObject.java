@@ -12,6 +12,11 @@ public class SymbolicObject{
 	Expression expression;
 	Map<String, Value> members = new HashMap<String, Value>();
 	
+
+	
+	private SymbolicObject()
+	{}
+	
 	public SymbolicObject(int birthday)
 	{
 		this.address = "#obj_" + birthday;
@@ -19,9 +24,10 @@ public class SymbolicObject{
 	
 	public SymbolicObject(int birthday, Expression ex)
 	{
-		this.address = "#obj_" + birthday;
+		this(birthday);
 		this.expression = ex.clone();
 	}
+	
 	
 	public String getAddress()
 	{
@@ -32,29 +38,33 @@ public class SymbolicObject{
 	{
 		return this.expression;
 	}
+
 	
 	public void putField(String fieldSig, Value value)
 	{
 		members.put(fieldSig, value);
 	}
 	
-	public boolean initializedField(String fieldSig)
-	{
-		return this.members.containsKey(fieldSig);
-	}
-	
-	public void initializeField(String fieldSig)
-	{
-		
-	}
-	
 	public Value getField(String fieldSig)
 	{
 		return members.get(fieldSig);
-		// if we don't have the class body, then it's possible
-		// that we didn't initialize its member fields when
-		// creating the object
-		
+	}
+	
+	public Map<String, Value> getFields()
+	{
+		return this.members;
+	}
+	
+	public SymbolicObject clone()
+	{
+		SymbolicObject result = new SymbolicObject();
+		result.address = this.address;
+		result.expression = this.expression==null?null:this.expression.clone();
+		for (Map.Entry<String, Value> entry : this.members.entrySet())
+		{
+			result.members.put(entry.getKey(), entry.getValue().clone());
+		}
+		return result;
 	}
 	
 	public void print()

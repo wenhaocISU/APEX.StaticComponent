@@ -11,7 +11,7 @@ public interface Value {
 	public String getType();
 	
 	public void setType(String type);
-	
+		
 	public boolean equals(Value v);
 	
 	public void print();

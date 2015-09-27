@@ -18,19 +18,22 @@ import apex.symbolic.value.Value;
 
 public class VMContext {
 
+	public static int MaxObjectCount = 300;
+	
 	private StaticApp staticApp;
 	
 	Stack<MethodContext> methods = new Stack<MethodContext>();
-	List<SymbolicObject> objects = new ArrayList<SymbolicObject>();
+	private List<SymbolicObject> objects = new ArrayList<SymbolicObject>();
 	private boolean endsWithThrow = false;
 	Value methodReturnedValue;
 	ArrayList<String> invokeParams = new ArrayList<String>();
+	private int objID = 0;
 	
 	public VMContext(StaticApp staticApp)
 	{
 		this.staticApp = staticApp;
 	}
-	
+
 	public void push(MethodContext mc)
 	{
 		this.methods.push(mc);
@@ -41,6 +44,32 @@ public class VMContext {
 		return this.methods.pop();
 	}
 	
+	public List<SymbolicObject> getSymbolicObjects()
+	{
+		return this.objects;
+	}
+	
+	public boolean endsWithThrow()
+	{
+		return this.endsWithThrow;
+	}
+	
+	public StaticApp getStaticApp()
+	{
+		return this.staticApp;
+	}
+	
+	private void addObject(SymbolicObject obj)
+	{
+		if (this.objects.size() > VMContext.MaxObjectCount)
+		{
+			//TODO garbage collection
+		}
+		this.objects.add(obj);
+	}
+	
+	
+	
 	/**
 	 * create an Object with given Expression, such
 	 * as: $this-Lcom/my/Class;. Returns the object's
@@ -48,8 +77,8 @@ public class VMContext {
 	 * */
 	public String createObject(Expression ex, String classDexName, boolean createInstanceFields)
 	{
-		SymbolicObject obj = new SymbolicObject(this.objects.size(), ex);
-		this.objects.add(obj);
+		SymbolicObject obj = new SymbolicObject(this.objID++, ex);
+		this.addObject(obj);
 		if (createInstanceFields)
 		{
 			StaticClass c = this.staticApp.getClassByDexName(classDexName);
@@ -64,6 +93,13 @@ public class VMContext {
 			}
 		}
 		return obj.getAddress();
+	}
+	
+	public String createNewInstance(Expression ex, String classDexName, boolean createInstanceFields)
+	{
+		Expression objEx = ex.clone();
+		objEx.add("#"+this.objID);
+		return this.createObject(objEx, classDexName, createInstanceFields);
 	}
 	
 	private void initializeField(SymbolicObject obj, StaticField f)
@@ -157,7 +193,7 @@ public class VMContext {
 			result.add(this.getObject(refV.getAddress()).getExpression().clone());
 		}
 		
-		// Right part. Could be 0, and it could mean 'null'
+		// Right part. Could be 0/null, or a register
 		if (rightReg.equals("0"))
 		{
 			if ((leftV instanceof ReferenceValue))
@@ -186,26 +222,39 @@ public class VMContext {
 		SymbolicObject obj = this.getObject(objRef.getAddress());
 		if (obj == null)
 		{
-			System.out.println("iput can't find the object!!!");
+			System.out.println("VMContext.iput() can't find the object!");
 			System.exit(1);
 		}
+		
 		obj.putField(fieldSig, value);
+	}
+	
+	public Expression getTrueExpression(Value v)
+	{
+		if (v instanceof LiteralValue)
+			return v.getExpression();
+		if (v instanceof ReferenceValue)
+		{
+			return this.getObject(v.getExpression().getContent()).getExpression();
+		}
+		return null;
 	}
 	
 	public Value iget(ReferenceValue objRef, String fieldSig)
 	{
 		SymbolicObject obj = this.getObject(objRef.getAddress());
-		if (obj != null)
+		if (obj == null)
 		{
-			Value fieldValue = obj.getField(fieldSig);
-			while (fieldValue == null)
-			{
-				this.initializeField(obj, fieldSig);
-				fieldValue = obj.getField(fieldSig);
-			}
-			return fieldValue;
+			System.out.println("VMContext.iget() can't find the object!");
+			System.exit(1);
 		}
-		return null;
+		Value fieldValue = obj.getField(fieldSig);
+		while (fieldValue == null)
+		{
+			this.initializeField(obj, fieldSig);
+			fieldValue = obj.getField(fieldSig);
+		}
+		return fieldValue;
 	}
 	
 	public void sput(String fieldSig, Value value)
@@ -227,12 +276,12 @@ public class VMContext {
 		Expression staticClassEx = new Expression("$static-fields");
 		staticClassEx.add(className);
 		String address = this.getAddressOfObject(staticClassEx);
-		Expression fieldEx = new Expression("$Fstatic");
-		fieldEx.add(fieldSig);
 		if (address.equals(""))
 		{
 			address = this.createObject(staticClassEx, className, false);
 			String fieldType = fieldSig.substring(fieldSig.lastIndexOf(":")+1);
+			Expression fieldEx = new Expression("$Fstatic");
+			fieldEx.add(fieldSig);
 			if (DEXParser.isPrimitiveType(fieldType))
 			{
 				LiteralValue v = new LiteralValue(fieldEx, fieldType);
@@ -276,6 +325,7 @@ public class VMContext {
 		}
 		else if (s.isReturnStmt())
 		{
+			this.endsWithThrow = false;
 			MethodContext mc = this.methods.pop();
 			String returnedVariable = s.getReturnedVariable();
 			if (!returnedVariable.equals(""))
@@ -296,6 +346,38 @@ public class VMContext {
 		}
 	}
 	
+	public VMContext clone()
+	{
+		VMContext result = new VMContext(this.staticApp);
+		for (MethodContext mc : this.methods)
+		{
+			MethodContext newMC = mc.clone();
+			newMC.vm = this;
+			result.methods.add(newMC);
+		}
+		for (SymbolicObject obj : objects)
+		{
+			result.objects.add(obj.clone());
+		}
+		result.endsWithThrow = this.endsWithThrow;
+		result.methodReturnedValue = this.methodReturnedValue==null?null:this.methodReturnedValue.clone();
+		result.invokeParams = new ArrayList<String>(this.invokeParams);
+		result.objID = this.objID;
+		return result;
+	}
+	
+	public VMContext copy()
+	{
+		VMContext result = new VMContext(this.staticApp);
+		for (SymbolicObject obj : objects)
+		{
+			result.objects.add(obj.clone());
+		}
+		result.objID = this.objID;
+		return result;
+	}
+	
+	
 	public void printSnapshot()
 	{
 		System.out.println("---------------VM Snapshot---------------");
@@ -307,15 +389,6 @@ public class VMContext {
 			obj.print();
 		System.out.println("-----------End of VM Snapshot------------");
 	}
-
-	public boolean endsWithThrow()
-	{
-		return this.endsWithThrow;
-	}
-
-
-
-
 
 
 }
