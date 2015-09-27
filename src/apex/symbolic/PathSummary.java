@@ -1,6 +1,5 @@
 package apex.symbolic;
 
-import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.Map;
 
@@ -19,6 +18,7 @@ public class PathSummary {
 	private ToDoPath p;
 	private ArrayList<String> executionLog = new ArrayList<String>();
 	private ArrayList<Expression> pathCondition = new ArrayList<Expression>();
+	private ArrayList<Expression> symbolicStates = null;
 
 		
 	public PathSummary(VMContext vm, ToDoPath p, String methodSig, int id)
@@ -39,6 +39,7 @@ public class PathSummary {
 	{
 		this.executionLog = new ArrayList<String>(execLog);
 	}
+	
 	
 	void setPathCondition(ArrayList<Expression> pathConditions)
 	{
@@ -103,22 +104,25 @@ public class PathSummary {
 	
 	public ArrayList<Expression> getSymbolicStates()
 	{
-		ArrayList<Expression> result = new ArrayList<Expression>();
-		for (SymbolicObject obj : this.vm.getSymbolicObjects())
+		if (this.symbolicStates == null)
 		{
-			Expression objEx = obj.getExpression();
-			if (objEx.getContent().equals("$this") || 
-					objEx.getContent().startsWith("$p") ||
-					objEx.getContent().equals("$static-fields"))
+			this.symbolicStates = new ArrayList<Expression>();
+			for (SymbolicObject obj : this.vm.getSymbolicObjects())
 			{
-				Map<String, Value> fields = obj.getFields();
-				for (Map.Entry<String, Value> entry : fields.entrySet())
+				Expression objEx = obj.getExpression();
+				if (objEx.getContent().equals("$this") || 
+						objEx.getContent().startsWith("$p") ||
+						objEx.getContent().equals("$static-fields"))
 				{
-					reportFieldState(result, entry, objEx);
+					Map<String, Value> fields = obj.getFields();
+					for (Map.Entry<String, Value> entry : fields.entrySet())
+					{
+						reportFieldState(entry, objEx);
+					}
 				}
 			}
 		}
-		return result;
+		return this.symbolicStates;
 	}
 	
 	/**
@@ -126,7 +130,7 @@ public class PathSummary {
 	 * If a field has a value that is different from its symbolic state, then
 	 * it will be reported into PathSummary's Symbolic States.
 	 * */
-	private void reportFieldState(ArrayList<Expression> result, Map.Entry<String, Value> entry, Expression objSymbolicExpression)
+	private void reportFieldState(Map.Entry<String, Value> entry, Expression objSymbolicExpression)
 	{
 		Expression symbolicState = new Expression("$Finstance");
 		symbolicState.add(entry.getKey());
@@ -144,7 +148,7 @@ public class PathSummary {
 				Expression out = new Expression("=");
 				out.add(symbolicState.clone());
 				out.add(concreteState.clone());
-				result.add(out);
+				this.symbolicStates.add(out);
 			}
 		}
 		else if (entry.getValue() instanceof ReferenceValue)
@@ -156,7 +160,7 @@ public class PathSummary {
 				Expression out = new Expression("=");
 				out.add(symbolicState.clone());
 				out.add(concreteState.clone());
-				result.add(out);
+				this.symbolicStates.add(out);
 			}
 			for (Map.Entry<String, Value> nextLevelEntry : fieldObj.getFields().entrySet())
 			{
@@ -169,7 +173,7 @@ public class PathSummary {
 					nextLevelSymbolicState = new Expression("$Fstatic");
 					nextLevelSymbolicState.add(entry.getKey());
 				}
-				reportFieldState(result, nextLevelEntry, nextLevelSymbolicState);
+				reportFieldState(nextLevelEntry, nextLevelSymbolicState);
 			}
 		}
 	}	
