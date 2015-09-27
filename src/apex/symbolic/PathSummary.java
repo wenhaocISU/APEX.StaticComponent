@@ -85,13 +85,17 @@ public class PathSummary {
 	 * */
 	public boolean isRelevantToConstraint(PathSummary ps)
 	{
+		ArrayList<Expression> states = this.getSymbolicStates();
 		for (Expression cond : ps.pathCondition)
 		{
 			for (int i = 0; i < cond.getChildCount(); i++)
 			{
 				Expression child = cond.getChild(i);
-				// use this as symbolic value, find its concrete value
-				// if not the same, then 
+				for (Expression state : states)
+				{
+					if (state.getChild(0).equals(child))
+						return true;
+				}
 			}
 		}
 		return false;
