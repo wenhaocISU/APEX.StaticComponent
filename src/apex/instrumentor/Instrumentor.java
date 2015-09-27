@@ -46,12 +46,13 @@ public class Instrumentor {
 	/**
 	 * Things to do:
 	 * 1. print "Method_Starting,[method signature]" before 1st statement
-	 * 2. print "Method_Returning,[method signature]" before return statement
-	 * 3. print "Method_Throwing,[method signature]" before throw statement
-	 * 4. print "ExecLog,[stmt info]" before if/switch
-	 * 5. print "ExecLog,[stmt info],flow_through" after if/switch
-	 * 6. print "ExecLog,[stmt info],try" before stmts in try block
-	 * 7. print "ExecLog,[stmt info],caught_exception" before 1st stmt in catch block
+	 * 2. print "execLog,[stmt info],caught_exception" before 1st stmt in catch block
+	 * 3. print "execLog,[stmt info],block,[block name]" before 1st stmt in any block
+	 * 4. print "execLog,[stmt info],try" before stmts in try block
+	 * 5. print "execLog,[stmt info],branch" before if/switch
+	 * 6. print "execLog,[stmt info],flow_through" after if/switch
+	 * 7. print "Method_Returning,[method signature]" before return statement
+	 * 8. print "Method_Throwing,[method signature]" before throw statement
 	 * */
 
 	public void instrumentStmt(StaticApp staticApp, StaticStmt s)
@@ -63,7 +64,32 @@ public class Instrumentor {
 			addPrintLnBefore(staticApp, s, "Method_Starting," + m.getSignature());
 		}
 		
-		// Job 2,3
+		// Job 2
+		if (s.getBlockName().contains(":catch_") && s.isFirstStmtOfBlock())
+		{
+			addPrintLnBefore(staticApp, s, "execLog," + s.getUniqueID() + ",caught_exception");
+		}
+
+		// Job 3
+		if (s.isFirstStmtOfBlock())
+		{
+			addPrintLnBefore(staticApp, s, "execLog," + s.getUniqueID() + ",block" + s.getBlockName());
+		}
+		
+		// Job 4
+		if (s.isInTryBlock())
+		{
+			addPrintLnBefore(staticApp, s, "execLog," + s.getUniqueID() + ",try");
+		}
+		
+		// Job 5,6
+		if (s.isIfStmt() || s.isSwitchStmt())
+		{
+			addPrintLnBefore(staticApp, s, "execLog," + s.getUniqueID());
+			addPrintLnAfter(staticApp, s, "execLog," + s.getUniqueID() + ",flow_through");
+		}
+
+		// Job 7,8
 		if (s.isReturnStmt())
 		{
 			addPrintLnBefore(staticApp, s, "Method_Returning," + m.getSignature());
@@ -71,25 +97,6 @@ public class Instrumentor {
 		else if (s.isThrowStmt())
 		{
 			addPrintLnBefore(staticApp, s, "Method_Throwing," + m.getSignature());
-		}
-		
-		// Job 4,5
-		if (s.isIfStmt() || s.isSwitchStmt())
-		{
-			addPrintLnBefore(staticApp, s, "execLog," + s.getUniqueID());
-			addPrintLnAfter(staticApp, s, "execLog," + s.getUniqueID() + ",flow_through");
-		}
-		
-		// Job 6
-		if (s.isInTryBlock())
-		{
-			addPrintLnBefore(staticApp, s, "execLog," + s.getUniqueID() + ",try");
-		}
-		
-		// Job 7
-		if (s.getBlockName().contains(":catch_") && s.isFirstStmtOfBlock())
-		{
-			addPrintLnBefore(staticApp, s, "execLog," + s.getUniqueID() + ",caught_exception");
 		}
 
 	}
@@ -138,7 +145,7 @@ public class Instrumentor {
 		{
 			regName = regInfo;
 		}
-		String assignStmt = "    const-string " + regName + ", \"" + text + "\"";
+		String constStringStmt = "    const-string " + regName + ", \"" + text + "\"";
 		String invokeStmt = "    invoke-static {" + regName + "}, Lapex/instrumented/Println;->print(Ljava/lang/String;)V";
 		if (!regType.equals(""))
 		{
@@ -147,13 +154,13 @@ public class Instrumentor {
 			String sputStmt = "    " + sputOp + " " + regName + ", " + f.getSignature();
 			String sgetStmt = "    " + sputStmt.replaceFirst("sput", "sget");
 			result.add(sputStmt);
-			result.add(assignStmt);
+			result.add(constStringStmt);
 			result.add(invokeStmt);
 			result.add(sgetStmt);
 		}
 		else
 		{
-			result.add(assignStmt);
+			result.add(constStringStmt);
 			result.add(invokeStmt);
 		}
 		return result;

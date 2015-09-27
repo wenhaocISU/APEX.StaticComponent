@@ -42,6 +42,12 @@ public class StaticApp {
 		this.dataFolder = dataFolder;
 	}
 	
+	/**
+	 * Instrumentation:
+	 * 1. add "libs/Println.smali" into Classes.dex
+	 * 2. add System.out.println() in each methods at important points. Check
+	 * apex.instrumentor.Instrumentor for details
+	 * */
 	public void instrument()
 	{
 		System.out.println("Instrumenting...");
@@ -84,6 +90,7 @@ public class StaticApp {
 		Jarsigner.signAPK(this.getUnsignedApkPath(), this.getInstrumentedApkPath());
 	}
 	
+	/**	debugging purpose only	*/
 	public void instrumentSome(int limit)
 	{
 		int i = 0;
@@ -121,6 +128,7 @@ public class StaticApp {
 		Jarsigner.signAPK(this.getUnsignedApkPath(), this.getInstrumentedApkPath());
 	}
 	
+	/**	debugging purpose only	*/
 	public void instrumentWithout(String classDexName)
 	{
 		for (StaticClass c : this.classes)
