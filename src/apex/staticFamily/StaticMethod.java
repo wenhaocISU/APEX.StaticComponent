@@ -528,8 +528,6 @@ public class StaticMethod {
 				return s;
 			}
 		}
-		//TODO
-		System.out.println("nothing");
 		return null;
 	}
 }

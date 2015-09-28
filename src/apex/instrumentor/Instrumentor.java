@@ -67,6 +67,8 @@ public class Instrumentor {
 		// Job 2
 		if (s.getBlockName().contains(":catch_") && s.isFirstStmtOfBlock())
 		{
+			// Here insert after statement because "move-exception"
+			// must be the first statement of a catch block
 			addPrintLnAfter(staticApp, s, "execLog," + s.getUniqueID() + ",caught_exception");
 		}
 
