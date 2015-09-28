@@ -67,11 +67,11 @@ public class Instrumentor {
 		// Job 2
 		if (s.getBlockName().contains(":catch_") && s.isFirstStmtOfBlock())
 		{
-			addPrintLnBefore(staticApp, s, "execLog," + s.getUniqueID() + ",caught_exception");
+			addPrintLnAfter(staticApp, s, "execLog," + s.getUniqueID() + ",caught_exception");
 		}
 
 		// Job 3
-		if (s.isFirstStmtOfBlock())
+		if (s.isFirstStmtOfBlock() && s.getBlockName().contains(":cond_"))
 		{
 			addPrintLnBefore(staticApp, s, "execLog," + s.getUniqueID() + ",block" + s.getBlockName());
 		}
@@ -104,9 +104,19 @@ public class Instrumentor {
 	private void addPrintLnBefore(StaticApp staticApp, StaticStmt s, String text)
 	{
 		ArrayList<String> printlnStmts = generatePrintLnStmts(staticApp, s, text);
-		for (String stmt : printlnStmts)
+		if (s.getBytecodeOperator().startsWith("move-result"))
 		{
-			s.addPrecedingStmt(stmt);
+			for (String stmt : printlnStmts)
+			{
+				s.addSucceedingStmt(stmt);
+			}
+		}
+		else
+		{
+			for (String stmt : printlnStmts)
+			{
+				s.addPrecedingStmt(stmt);
+			}
 		}
 	}
 	

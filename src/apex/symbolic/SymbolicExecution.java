@@ -32,11 +32,11 @@ public class SymbolicExecution {
 		return result;
 	}
 	
-	private void execute(PathSummary ps, ToDoPath p, VMContext vm)
+	private void execute(PathSummary ps, ArrayList<String> execLog, VMContext vm)
 	{
-		for (int index = 0; index < p.execLog.size(); index++)
+		for (int index = 0; index < execLog.size(); index++)
 		{
-			String stmtInfo = p.execLog.get(index);
+			String stmtInfo = execLog.get(index);
 			if (this.debug)
 			{
 				System.out.println("\n\n[" + stmtInfo + "]");
@@ -80,7 +80,7 @@ public class SymbolicExecution {
 	public PathSummary doFullSymbolic(VMContext vm, ToDoPath p, String methodSig, int id)
 	{
 		PathSummary ps = new PathSummary(vm, p, methodSig, id);
-		execute(ps, p, vm);
+		execute(ps, p.execLog, vm);
 		return ps;
 	}
 	
@@ -88,7 +88,7 @@ public class SymbolicExecution {
 	{
 		PathSummary ps = new PathSummary(vm, p, methodSig, id);
 		ps.setPathCondition(pathConditions);
-		execute(ps, p, vm);
+		execute(ps, p.execLog, vm);
 		return ps;
 	}
 	

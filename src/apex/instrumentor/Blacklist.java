@@ -26,7 +26,7 @@ public class Blacklist {
 	public static ArrayList<String> methods = new ArrayList<String>(Arrays.asList(
 			""
 	));
-
+	
 	
 	public static boolean classInBlackList(String className) {
 		for (String c : classes) {
@@ -45,5 +45,6 @@ public class Blacklist {
 	public static boolean methodInBlackList(String methodSig) {
 		return methods.contains(methodSig);
 	}
+	
 
 }
