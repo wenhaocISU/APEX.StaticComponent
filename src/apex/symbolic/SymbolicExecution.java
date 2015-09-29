@@ -94,7 +94,7 @@ public class SymbolicExecution {
 	
 	public PathSummary doFullSymbolic(ArrayList<String> execLog)
 	{
-		//TODO TBC
+		//TODO TBC not very clear about the input
 		return null;
 	}
 	

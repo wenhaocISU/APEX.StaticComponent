@@ -208,10 +208,9 @@ public class MethodContext {
 		}
 		else if (right.getContent().equals("$const-string"))
 		{
-			//TODO string objects
 			String address = vm.createStringObject(right.clone());
 			ReferenceValue v = new ReferenceValue(new Expression(address), "String");
-			
+			this.writeRegister(left.getContent(), v);
 		}
 		else if (right.getContent().equals("$instance-of"))
 		{	// Just gonna try to solve it right here

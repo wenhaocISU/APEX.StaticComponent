@@ -6,6 +6,12 @@ import apex.symbolic.Expression;
 
 public class SymbolicString extends SymbolicObject{
 
+	/**
+	 * 
+	 * 
+	 * */
+	
+	
 	private ArrayList<String> builderHistory;
 	private String initValue = "";
 	
