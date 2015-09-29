@@ -95,6 +95,18 @@ public class VMContext {
 		return obj.getAddress();
 	}
 	
+	public String createArrayObject(Expression arrayEx)
+	{
+		//TODO
+		return "";
+	}
+	
+	public String createStringObject(Expression stringEx)
+	{
+		//TODO
+		return this.createObject(stringEx.clone(), "String", false);
+	}
+	
 	public String createNewInstance(Expression ex, String classDexName, boolean createInstanceFields)
 	{
 		Expression objEx = ex.clone();
@@ -297,17 +309,7 @@ public class VMContext {
 		return this.getObject(address).getField(fieldSig);
 	}
 	
-	public String createArrayObject(Expression arrayEx)
-	{
-		//TODO
-		return "";
-	}
-	
-	public String createStringObject(Expression stringEx)
-	{
-		//TODO
-		return "";
-	}
+
 	
 	public void applyOperation(StaticStmt s)
 	{

@@ -390,10 +390,10 @@ public class DEXParser {
 		{
 			String vA = stmt.substring(stmt.indexOf(" ")+1, stmt.indexOf(", "));
 			String stringValue = stmt.substring(stmt.indexOf(", ")+2);
-			Expression classEx = new Expression("$const-string");
-			classEx.add(stringValue);
+			Expression stringEx = new Expression("$const-string");
+			stringEx.add(stringValue);
 			ex.add(vA);
-			ex.add(classEx);
+			ex.add(stringEx);
 		}
 		/**	const-class	*/
 		else if (stmtIndex == 28)

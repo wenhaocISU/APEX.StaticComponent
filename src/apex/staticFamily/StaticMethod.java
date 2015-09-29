@@ -236,9 +236,16 @@ public class StaticMethod {
 	
 	public void instrument(StaticApp staticApp, Instrumentor instrumentor)
 	{
-		for (StaticStmt s : this.statements)
+		if (!this.throwsException())
 		{
-			instrumentor.instrumentStmt(staticApp, s);
+			for (StaticStmt s : this.statements)
+			{
+				instrumentor.instrumentStmt(staticApp, s);
+			}
+		}
+		else
+		{
+			instrumentor.instrumentEveryStmt(staticApp, this);
 		}
 	}
 	
@@ -428,6 +435,16 @@ public class StaticMethod {
 	public List<String> getFieldRefSigs()
 	{
 		return fieldRefSigs;
+	}
+	
+	public boolean throwsException()
+	{
+		for (String line : this.methodAnnotations)
+		{
+			if (line.equals("    .annotation system Ldalvik/annotation/Throws;"))
+				return true;
+		}
+		return false;
 	}
 	
 	public ArrayList<String> getDataChunk(String label)

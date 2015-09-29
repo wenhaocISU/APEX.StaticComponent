@@ -6,7 +6,6 @@ import apex.symbolic.value.Value;
 public class SymbolicArray extends SymbolicObject{
 
 	private Value length;
-
 	
 	public SymbolicArray(int birthday)
 	{

@@ -43,6 +43,15 @@ public class Instrumentor {
 		}
 	}
 	
+	public void instrumentEveryStmt(StaticApp staticApp, StaticMethod m)
+	{
+		for (StaticStmt s : m.getStatements())
+		{
+			addPrintLnBefore(staticApp, s, "execLog," + s.getUniqueID() + ",try");
+		}
+	}
+	
+	
 	/**
 	 * Things to do:
 	 * 1. print "Method_Starting,[method signature]" before 1st statement

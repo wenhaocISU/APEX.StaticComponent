@@ -92,14 +92,10 @@ public class SymbolicExecution {
 		return ps;
 	}
 	
-	public List<PathSummary> doFullSymbolic(ArrayList<String> execLog)
+	public PathSummary doFullSymbolic(ArrayList<String> execLog)
 	{
-		List<PathSummary> result = new ArrayList<PathSummary>();
-		if (execLog.isEmpty())
-			return result;
-		ArrayList<String> partialExecLog = new ArrayList<String>();
-		
-		return result;
+		//TODO TBC
+		return null;
 	}
 	
 	/**

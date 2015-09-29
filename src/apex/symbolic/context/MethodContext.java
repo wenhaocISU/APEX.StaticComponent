@@ -209,12 +209,15 @@ public class MethodContext {
 		else if (right.getContent().equals("$const-string"))
 		{
 			//TODO string objects
+			String address = vm.createStringObject(right.clone());
+			ReferenceValue v = new ReferenceValue(new Expression(address), "String");
+			
 		}
 		else if (right.getContent().equals("$instance-of"))
 		{	// Just gonna try to solve it right here
-			Expression instance = right.getChild(0);
+			Expression instanceEx = right.getChild(0);
 			String targetType = right.getChild(1).getContent();
-			String thisType = this.getRegister(instance.getContent()).getValue().getType();
+			String thisType = this.getRegister(instanceEx.getContent()).getValue().getType();
 			if (thisType.equals(targetType))
 			{
 				this.writeRegister(left.getContent(), new LiteralValue(new Expression("1"), "Z"));
