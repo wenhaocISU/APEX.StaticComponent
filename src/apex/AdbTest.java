@@ -9,14 +9,16 @@ import apex.staticFamily.StaticApp;
 public class AdbTest {
 
 	
-	public static void Test(StaticApp a)
+	public static String adbPath = "/home/wenhaoc/bin/AndroidSDK/platform-tools/adb";
+	
+	public static void Test(StaticApp a, int x, int y)
 	{
 		uninstall(a.getPackageName());
 		install(a.getInstrumentedApkPath());
 		hitHome();
 		startActivity(a.getPackageName(), a.getMainActivity().getJavaName());
 		clearLogcat();
-		click(300, 730);
+		click(x, y);
 		ArrayList<String> output = readLogcat("System.out:I *:S");
 		for (String s : output)
 			System.out.println(s);
@@ -24,38 +26,38 @@ public class AdbTest {
 	
 	public static void install(String file)
 	{
-		exec("adb install " + file);
+		exec("install " + file);
 	}
 	
 	public static void uninstall(String packageName)
 	{
-		exec("adb uninstall " + packageName);
+		exec("uninstall " + packageName);
 	}
 	
 	public static void startActivity(String packageName, String activityName)
 	{
-		exec("adb shell am start -W -n " + packageName + "/" + activityName);
+		exec("shell am start -W -n " + packageName + "/" + activityName);
 	}
 	
 	public static void click(int x, int y)
 	{
-		exec("adb shell input tap " + x + " " + y);
+		exec("shell input tap " + x + " " + y);
 	}
 	
 	public static void hitHome()
 	{
-		exec("adb shell input keyevent 3");
+		exec("shell input keyevent 3");
 		sleep(100);
 	}
 	
 	public static void clearLogcat()
 	{
-		exec("adb logcat -c");
+		exec("logcat -c");
 	}
 	
 	public static ArrayList<String> readLogcat(String filters)
 	{
-		Process p = exec("adb logcat -d " + filters);
+		Process p = exec("logcat -d " + filters);
 		ArrayList<String> output = readInputStream(p);
 		return output;
 	}
@@ -82,7 +84,6 @@ public class AdbTest {
 			while ((line = in.readLine())!=null)
 			{
 				result.add(line);
-				System.out.println("[out]" + line);
 			}
 			in.close();
 		}
@@ -97,7 +98,7 @@ public class AdbTest {
 	{
 		try
 		{
-			Process p = Runtime.getRuntime().exec(command);
+			Process p = Runtime.getRuntime().exec(adbPath + " " + command);
 			p.waitFor();
 			return p;
 		}

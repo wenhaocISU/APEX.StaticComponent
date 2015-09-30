@@ -38,7 +38,6 @@ public class SymbolicObject{
 	{
 		return this.expression;
 	}
-
 	
 	public void putField(String fieldSig, Value value)
 	{

@@ -12,6 +12,7 @@ import apex.staticFamily.StaticMethod;
 import apex.staticFamily.StaticStmt;
 import apex.symbolic.Expression;
 import apex.symbolic.object.SymbolicObject;
+import apex.symbolic.object.SymbolicString;
 import apex.symbolic.value.LiteralValue;
 import apex.symbolic.value.ReferenceValue;
 import apex.symbolic.value.Value;
@@ -20,7 +21,7 @@ public class VMContext {
 
 	public static int MaxObjectCount = 300;
 	
-	private StaticApp staticApp;
+	StaticApp staticApp;
 	
 	Stack<MethodContext> methods = new Stack<MethodContext>();
 	private List<SymbolicObject> objects = new ArrayList<SymbolicObject>();
@@ -34,6 +35,11 @@ public class VMContext {
 		this.staticApp = staticApp;
 	}
 
+	public void setRecentInvokeResult(Value v)
+	{
+		this.methodReturnedValue = v.clone();
+	}
+	
 	public void push(MethodContext mc)
 	{
 		this.methods.push(mc);
@@ -77,6 +83,13 @@ public class VMContext {
 	 * */
 	public String createObject(Expression ex, String classDexName, boolean createInstanceFields)
 	{
+		if (classDexName.equals("Ljava/lang/StringBuilder;"))
+		{
+			SymbolicString stringObj = new SymbolicString(this.objID++, ex);
+			this.addObject(stringObj);
+			return stringObj.getAddress();
+		}
+
 		SymbolicObject obj = new SymbolicObject(this.objID++, ex);
 		this.addObject(obj);
 		if (createInstanceFields)
@@ -318,7 +331,6 @@ public class VMContext {
 		{
 			MethodContext mc = new MethodContext(m, this);
 			this.methods.push(mc);
-			mc.applyStatement(s);
 		}
 		if (s.isThrowStmt())
 		{
@@ -336,12 +348,12 @@ public class VMContext {
 				this.methodReturnedValue = returnedValue.clone();
 			}
 		}
-		else if (s.isInvokeStmt())
-		{
-			this.invokeParams = s.getInvokeParameters();
-		}
 		else
 		{
+			if (s.isInvokeStmt())
+			{
+				this.invokeParams = s.getInvokeParameters();
+			}
 			MethodContext mc = this.pop();
 			mc.applyStatement(s);
 			this.push(mc);

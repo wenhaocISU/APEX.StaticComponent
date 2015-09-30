@@ -12,7 +12,8 @@ import apex.symbolic.context.VMContext;
 public class SymbolicExecution {
 
 	private StaticApp staticApp;
-	public boolean debug = false;
+	public boolean printStmtInfo = false;
+	public boolean printVMStatus = false;
 	
 	public SymbolicExecution(StaticApp staticApp)
 	{
@@ -37,9 +38,11 @@ public class SymbolicExecution {
 		for (int index = 0; index < execLog.size(); index++)
 		{
 			String stmtInfo = execLog.get(index);
-			if (this.debug)
+			if (this.printStmtInfo)
 			{
-				System.out.println("\n\n[" + stmtInfo + "]");
+				System.out.println("[" + stmtInfo + "]");
+				if (this.printVMStatus)
+					vm.printSnapshot();
 			}
 			if (stmtInfo.contains(",")) //if or switch, need to update path constraint
 			{

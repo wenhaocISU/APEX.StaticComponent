@@ -164,16 +164,7 @@ public class PathSummary {
 			}
 			for (Map.Entry<String, Value> nextLevelEntry : fieldObj.getFields().entrySet())
 			{
-				String fieldSig = nextLevelEntry.getKey();
-				Expression nextLevelSymbolicState = new Expression("$Finstance");
-				nextLevelSymbolicState.add(fieldSig);
-				nextLevelSymbolicState.add(symbolicState.clone());
-				if (objSymbolicExpression.getContent().equals("$static-fields"))
-				{
-					nextLevelSymbolicState = new Expression("$Fstatic");
-					nextLevelSymbolicState.add(entry.getKey());
-				}
-				reportFieldState(nextLevelEntry, nextLevelSymbolicState);
+				reportFieldState(nextLevelEntry, symbolicState);
 			}
 		}
 	}	

@@ -6,6 +6,7 @@ import apex.parser.DEXParser;
 import apex.staticFamily.StaticMethod;
 import apex.staticFamily.StaticStmt;
 import apex.symbolic.Expression;
+import apex.symbolic.object.solver.StringSolver;
 import apex.symbolic.value.LiteralValue;
 import apex.symbolic.value.ReferenceValue;
 import apex.symbolic.value.Value;
@@ -112,9 +113,18 @@ public class MethodContext {
 	 * */
 	public void applyStatement(StaticStmt s)
 	{
+//deal with APIs
+		if (s.isInvokeStmt())
+		{
+			solveInvokeStatement(s);
+			return;
+		}
+		
 		Expression ex = s.getOperationExpression();
 		if (ex.getContent().equals(""))
+		{
 			return;
+		}
 		Expression left = ex.getChild(0);
 		Expression right = ex.getChild(1);
 // $result = $array
@@ -286,9 +296,51 @@ public class MethodContext {
 		}
 	}
 	
+	public void solveInvokeStatement(StaticStmt s)
+	{
+		if (!s.isInvokeStmt())
+			return;
+		String invokeSig = s.getInvokeSignature();
+		StaticMethod targetM = this.vm.staticApp.getMethod(invokeSig);
+		if (targetM != null)
+			return;
+		if (StringSolver.isSolvableStringBuilderAPI(invokeSig))
+		{
+			StringSolver.solve(vm, this, s);
+		}
+		else if (!invokeSig.endsWith(")V"))
+		{
+			// just replace each parameter reg name with its value
+			// create a corresponding Literal/Reference value
+			// and put it in this.recentInvokeResult
+			ArrayList<String> params = s.getInvokeParameters();
+			Expression resultEx = new Expression("$api");
+			resultEx.add(invokeSig);
+			for (int i = 0; i < params.size(); i++)
+			{
+				String piRegName = params.get(i);
+				Value piValue = this.getRegister(piRegName).getValue();
+				if (piValue != null)
+					resultEx.add(piValue.getExpression().clone());
+			}
+			String returnType = invokeSig.substring(invokeSig.lastIndexOf(")")+1);
+			if (DEXParser.isPrimitiveType(returnType))
+			{
+				LiteralValue v = new LiteralValue(resultEx, returnType);
+				this.putResult(v);
+			}
+			else
+			{
+				String address = this.vm.createObject(resultEx, returnType, true);
+				ReferenceValue v = new ReferenceValue(new Expression(address), returnType);
+				this.putResult(v);
+			}
+		}
+	}
+	
 	public void putResult(Value v)
 	{
-		this.recentResult = v;
+		this.recentResult = v.clone();
 	}
 	
 	public Register getRegister(String name)

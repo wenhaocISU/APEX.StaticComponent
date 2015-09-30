@@ -23,6 +23,8 @@ public class Register {
 	
 	public Value getValue()
 	{
+		if (this.isLocked)
+			return null;
 		return this.value;
 	}
 	

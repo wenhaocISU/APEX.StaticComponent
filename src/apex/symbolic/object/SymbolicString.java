@@ -1,29 +1,38 @@
 package apex.symbolic.object;
 
-import java.util.ArrayList;
-
 import apex.symbolic.Expression;
+import apex.symbolic.value.LiteralValue;
+import apex.symbolic.value.ReferenceValue;
 
 public class SymbolicString extends SymbolicObject{
 
-	/**
-	 * 
-	 * 
-	 * */
 	
+	private Expression stringEx;
 	
-	private ArrayList<String> builderHistory;
-	private String initValue = "";
-	
-	public SymbolicString(int birthday, String initValue)
+	public SymbolicString(int birthday, Expression ex)
 	{
-		super(birthday);
-		this.initValue = initValue;
+		super(birthday, ex);
 	}
 	
-	public Expression getStringExpression()
+	
+	public void init(LiteralValue v)
 	{
-		return null;
+		this.stringEx = v.getExpression().clone();
+	}
+	
+	public ReferenceValue append(String appendSignature, LiteralValue toAppend)
+	{
+		Expression oldStringEx = this.stringEx.clone();
+		this.stringEx = new Expression("$api");
+		this.stringEx.add(appendSignature);
+		this.stringEx.add(oldStringEx);
+		this.stringEx.add(toAppend.getExpression());
+		return new ReferenceValue(new Expression(this.address), "Ljava/lang/StringBuilder;");
+	}
+	
+	public Expression toStringExpression()
+	{
+		return this.stringEx.clone();
 	}
 
 }

@@ -307,7 +307,7 @@ public class StaticMethod {
 		// Now we can't use the registers from this statement,
 		// have to do a simple symbolic execution
 		SymbolicExecution sex = new SymbolicExecution(staticApp);
-		sex.debug = false;
+		sex.printStmtInfo = false;
 		ArrayList<ToDoPath> tdP = sex.generateToDoPaths(this, 0, s.getStatementID());
 		for (ToDoPath p : tdP)
 		{
