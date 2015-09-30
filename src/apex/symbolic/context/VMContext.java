@@ -13,7 +13,7 @@ import apex.staticFamily.StaticStmt;
 import apex.symbolic.Expression;
 import apex.symbolic.object.SymbolicArray;
 import apex.symbolic.object.SymbolicObject;
-import apex.symbolic.object.SymbolicString;
+import apex.symbolic.object.SymbolicStringBuilder;
 import apex.symbolic.value.LiteralValue;
 import apex.symbolic.value.ReferenceValue;
 import apex.symbolic.value.Value;
@@ -84,17 +84,16 @@ public class VMContext {
 	{
 		if (type.equals("Ljava/lang/StringBuilder;"))
 		{
-			SymbolicString stringObj = new SymbolicString(this.objID++, ex);
+			SymbolicStringBuilder stringObj = new SymbolicStringBuilder(this.objID++, ex);
 			this.addObject(stringObj);
 			return stringObj.getAddress();
 		}
 		if (type.startsWith("["))
 		{
-			SymbolicArray arrayObj = new SymbolicArray(this.objID++, ex);
+			SymbolicArray arrayObj = new SymbolicArray(this.objID++, ex, type.substring(1));
 			this.addObject(arrayObj);
 			return arrayObj.getAddress();
 		}
-
 		SymbolicObject obj = new SymbolicObject(this.objID++, ex);
 		this.addObject(obj);
 		if (createInstanceFields)
@@ -125,7 +124,7 @@ public class VMContext {
 		Expression fieldEx = new Expression("$Finstance");
 		fieldEx.add(f.getSignature());
 		fieldEx.add(obj.getExpression());
-		if (DEXParser.isPrimitiveType(f.getType()))
+		if (DEXParser.isPrimitiveType(f.getType()) || f.getType().equals("Ljava/lang/String;"))
 		{
 			LiteralValue v = new LiteralValue(fieldEx, f.getType());
 			obj.putField(f.getSignature(), v);
@@ -144,7 +143,7 @@ public class VMContext {
 		fieldEx.add(fieldSig);
 		fieldEx.add(obj.getExpression());
 		String fieldType = fieldSig.substring(fieldSig.lastIndexOf(":")+1);
-		if (DEXParser.isPrimitiveType(fieldType))
+		if (DEXParser.isPrimitiveType(fieldType) || fieldType.equals("Ljava/lang/String;"))
 		{
 			LiteralValue v = new LiteralValue(fieldEx, fieldType);
 			obj.putField(fieldSig, v);
@@ -300,7 +299,7 @@ public class VMContext {
 			String fieldType = fieldSig.substring(fieldSig.lastIndexOf(":")+1);
 			Expression fieldEx = new Expression("$Fstatic");
 			fieldEx.add(fieldSig);
-			if (DEXParser.isPrimitiveType(fieldType))
+			if (DEXParser.isPrimitiveType(fieldType) || fieldType.equals("Ljava/lang/String;"))
 			{
 				LiteralValue v = new LiteralValue(fieldEx, fieldType);
 				this.getObject(address).putField(fieldSig, v);

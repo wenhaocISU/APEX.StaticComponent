@@ -8,7 +8,7 @@ import apex.symbolic.value.Value;
 
 public class SymbolicObject{
 
-	String address;
+	public String address;
 	Expression expression;
 	Map<String, Value> members = new HashMap<String, Value>();
 	

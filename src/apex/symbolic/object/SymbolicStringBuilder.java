@@ -4,12 +4,12 @@ import apex.symbolic.Expression;
 import apex.symbolic.value.LiteralValue;
 import apex.symbolic.value.ReferenceValue;
 
-public class SymbolicString extends SymbolicObject{
+public class SymbolicStringBuilder extends SymbolicObject{
 
 	
 	private Expression stringEx;
 	
-	public SymbolicString(int birthday, Expression ex)
+	public SymbolicStringBuilder(int birthday, Expression ex)
 	{
 		super(birthday, ex);
 	}

@@ -8,7 +8,7 @@ import apex.staticFamily.StaticStmt;
 import apex.symbolic.Expression;
 import apex.symbolic.object.SymbolicArray;
 import apex.symbolic.object.SymbolicObject;
-import apex.symbolic.object.solver.StringSolver;
+import apex.symbolic.object.solver.StringBuilderSolver;
 import apex.symbolic.value.LiteralValue;
 import apex.symbolic.value.ReferenceValue;
 import apex.symbolic.value.Value;
@@ -48,7 +48,7 @@ public class MethodContext {
 				else
 				{
 					Expression ex = new Expression("$" + reg.name);
-					if (DEXParser.isPrimitiveType(paramType))
+					if (DEXParser.isPrimitiveType(paramType) || paramType.equals("Ljava/lang/String;"))
 					{
 						LiteralValue v = new LiteralValue(ex, paramType);
 						reg.assign(v);
@@ -210,7 +210,7 @@ public class MethodContext {
 		{
 			Expression numEx = right.getChild(0);
 			String type = right.getChild(1).getContent();
-			LiteralValue v = new LiteralValue(numEx, type);
+			LiteralValue v = new LiteralValue(numEx.clone(), type);
 			this.writeRegister(left.getContent(), v);
 		}
 		else if (right.getContent().equals("$const-class"))
@@ -220,8 +220,7 @@ public class MethodContext {
 		}
 		else if (right.getContent().equals("$const-string"))
 		{
-			String address = vm.createObject(right, "Ljava/lang/String;", false);
-			ReferenceValue v = new ReferenceValue(new Expression(address), "String");
+			LiteralValue v = new LiteralValue(right.clone(), "Ljava/lang/String;");
 			this.writeRegister(left.getContent(), v);
 		}
 		else if (right.getContent().equals("$instance-of"))
@@ -256,39 +255,71 @@ public class MethodContext {
 		}
 		else if (right.getContent().equals("$array"))
 		{
-			//TODO array initiation
+			//first initiate the array with length and type
 			String arrayType = "[" + right.getChild(1).getContent();
-			Expression arrayEx = right.clone();
-			if (arrayEx.getChildCount() > 2)
-			{
-				for (int i = 2; i < arrayEx.getChildCount(); i++)
-				{	// the index here is always constant, therefore no need to solve
-					Expression elementEx = arrayEx.getChild(i);
-					String value = elementEx.getChild(1).getContent();
-					if (value.startsWith("v")||value.startsWith("p"))
-					{
-						Value eleValue = this.getRegister(value).getValue();
-						
-					}
-				}
-			}
-			String address = this.vm.createObject(arrayEx, arrayType, false);
+			Expression arrayEx = new Expression("$array");
+			arrayEx.add(right.getChild(0).clone());
+			arrayEx.add(right.getChild(1).clone());
+			String address = this.vm.createObject(right.clone(), arrayType, false);
 			ReferenceValue v = new ReferenceValue(new Expression(address), arrayType);
 			this.writeRegister(left.getContent(), v);
+			// then put each element in (if there are any)
+			SymbolicArray arrayObj = (SymbolicArray) this.vm.getObject(address);
+			for (int i = 2; i < arrayEx.getChildCount(); i++)
+			{
+				Expression elementEx = arrayEx.getChild(i);
+				int index = Integer.parseInt(elementEx.getChild(0).getContent());
+				LiteralValue indexV = new LiteralValue(new Expression(index+""), "I");
+				Expression valueEx = elementEx.getChild(1);
+				if (valueEx.getContent().startsWith("v") || valueEx.getContent().startsWith("p"))
+				{
+					Value valueToPut = this.getRegister(valueEx.getContent()).getValue();
+					arrayObj.aput(indexV, valueToPut);
+				}
+				else if (valueEx.getContent().equals("$number"))// if it's not a register name, then it's definitely a number
+				{
+					Expression decEx = valueEx.getChild(0);
+					String type = valueEx.getChild(1).getContent();
+					Value valueToPut = new LiteralValue(decEx.clone(), type);
+					arrayObj.aput(indexV, valueToPut);
+				}
+				else
+				{
+					System.out.println("$array Expression element is neither register nor number");
+					System.exit(1);
+				}
+			}
+
 		}
 		else if (right.getContent().equals("$aget"))
 		{
 			//TODO aget
 			String arrayRegName = right.getChild(0).getContent();
+			String indexRegName = right.getChild(1).getContent();
 			SymbolicArray arrayObj = getArrayObject(s, arrayRegName);
-			arrayObj.aget(null);
+			Value index = this.getRegister(indexRegName).getValue();
+			if (!(index instanceof LiteralValue))
+			{
+				System.out.println("aget index is not LiteralValue at " + s.getUniqueID());
+				System.exit(1);
+			}
+			Value elementValue = arrayObj.aget((LiteralValue)index);
+			this.writeRegister(left.getContent(), elementValue);
 		}
 		else if (right.getContent().equals("$aput"))
 		{
 			//TODO aput
 			String arrayRegName = right.getChild(0).getContent();
+			String indexRegName = right.getChild(1).getContent();
 			SymbolicArray arrayObj = getArrayObject(s, arrayRegName);
-			arrayObj.aput(null, null);
+			Value index = this.getRegister(indexRegName).getValue();
+			if (!(index instanceof LiteralValue))
+			{
+				System.out.println("aput index is not LiteralValue at " + s.getUniqueID());
+				System.exit(1);
+			}
+			Value toPut = this.getRegister(left.getContent()).getValue();
+			arrayObj.aput((LiteralValue)index, toPut);
 		}
 		else if (DEXParser.isArithmaticalOperator(right.getContent()))	// operation of the literals
 		{
@@ -353,9 +384,9 @@ public class MethodContext {
 		StaticMethod targetM = this.vm.staticApp.getMethod(invokeSig);
 		if (targetM != null)
 			return;
-		if (StringSolver.isSolvableStringBuilderAPI(invokeSig))
+		if (StringBuilderSolver.isSolvableStringBuilderAPI(invokeSig))
 		{
-			StringSolver.solve(vm, this, s);
+			StringBuilderSolver.solve(vm, this, s);
 		}
 		else if (!invokeSig.endsWith(")V"))
 		{
@@ -373,7 +404,7 @@ public class MethodContext {
 					resultEx.add(piValue.getExpression().clone());
 			}
 			String returnType = invokeSig.substring(invokeSig.lastIndexOf(")")+1);
-			if (DEXParser.isPrimitiveType(returnType))
+			if (DEXParser.isPrimitiveType(returnType) || returnType.equals("Ljava/lang/String;"))
 			{
 				LiteralValue v = new LiteralValue(resultEx, returnType);
 				this.putResult(v);
