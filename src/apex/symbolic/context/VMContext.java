@@ -195,8 +195,7 @@ public class VMContext {
 		Expression result = new Expression(cond.getContent());
 		String leftReg = cond.getChild(0).getContent();
 		String rightReg = cond.getChild(1).getContent();
-		MethodContext mc = this.pop();
-		this.push(mc);
+		MethodContext mc = this.methods.peek();
 		
 		// Left part
 		Value leftV = mc.getRegister(leftReg).getValue();
@@ -346,9 +345,8 @@ public class VMContext {
 			{
 				this.invokeParams = s.getInvokeParameters();
 			}
-			MethodContext mc = this.pop();
+			MethodContext mc = this.methods.peek();
 			mc.applyStatement(s);
-			this.push(mc);
 		}
 	}
 	

@@ -102,6 +102,27 @@ public class PathSummary {
 		return false;
 	}
 	
+	/**
+	 * Returns whether this path summary's execution log is equivalent
+	 * to the logcat output.
+	 * 
+	 * */
+	public boolean matchesExecutionLog(ArrayList<String> logcatOutput)
+	{
+		SymbolicExecution sex = new SymbolicExecution(this.vm.getStaticApp());
+		ArrayList<String> fullExecLog = sex.expandLogcatOutput(logcatOutput).execLog;
+		if (fullExecLog.size() != logcatOutput.size())
+		{
+			return false;
+		}
+		for (int i = 0; i < fullExecLog.size(); i++)
+		{
+			if (!fullExecLog.get(i).equals(logcatOutput))
+				return false;
+		}
+		return true;
+	}	
+	
 	public ArrayList<Expression> getSymbolicStates()
 	{
 		if (this.symbolicStates == null)

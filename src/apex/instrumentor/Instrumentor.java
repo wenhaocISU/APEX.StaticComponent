@@ -76,8 +76,8 @@ public class Instrumentor {
 		// Job 2
 		if (s.getBlockName().contains(":catch_") && s.isFirstStmtOfBlock())
 		{
-			// Here insert after statement because "move-exception"
-			// must be the first statement of a catch block
+			// "move-exception" must be the first statement of a catch block
+			// therefore println must be inserted after instead of before
 			addPrintLnAfter(staticApp, s, "execLog," + s.getUniqueID() + ",caught_exception");
 		}
 
@@ -94,12 +94,16 @@ public class Instrumentor {
 		}
 		
 		// Job 5,6
-		if (s.isIfStmt() || s.isSwitchStmt())
+		if (s.isIfStmt())
 		{
-			addPrintLnBefore(staticApp, s, "execLog," + s.getUniqueID());
+			addPrintLnBefore(staticApp, s, "execLog," + s.getUniqueID() + ",if");
 			addPrintLnAfter(staticApp, s, "execLog," + s.getUniqueID() + ",flow_through");
 		}
-
+		else if (s.isSwitchStmt())
+		{
+			addPrintLnBefore(staticApp, s, "execLog," + s.getUniqueID() + ",switch");
+			addPrintLnAfter(staticApp, s, "execLog," + s.getUniqueID() + ",flow_through");
+		}
 		// Job 7,8
 		if (s.isReturnStmt())
 		{
@@ -107,7 +111,7 @@ public class Instrumentor {
 		}
 		else if (s.isThrowStmt())
 		{
-			addPrintLnBefore(staticApp, s, "Method_Throwing," + m.getSignature());
+			addPrintLnBefore(staticApp, s, "Method_Throwing," + m.getSignature() + "," + s.getUniqueID());
 		}
 
 	}

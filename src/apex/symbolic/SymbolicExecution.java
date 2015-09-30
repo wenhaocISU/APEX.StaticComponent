@@ -3,6 +3,7 @@ package apex.symbolic;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Stack;
 
 import apex.staticFamily.StaticApp;
 import apex.staticFamily.StaticMethod;
@@ -95,10 +96,115 @@ public class SymbolicExecution {
 		return ps;
 	}
 	
-	public PathSummary doFullSymbolic(ArrayList<String> execLog)
+	public PathSummary doFullSymbolic(ArrayList<String> logcatOutput)
 	{
-		//TODO TBC not very clear about the input
-		return null;
+		ToDoPath p = this.expandLogcatOutput(logcatOutput);
+		VMContext vm = new VMContext(staticApp);
+		String methodSig = p.m.getSignature();
+		int id = 0;
+		PathSummary ps = new PathSummary(vm, p, methodSig, id);
+		execute(ps, p.execLog, vm);
+		return ps;
+	}
+	
+	public ToDoPath expandLogcatOutput(ArrayList<String> logcat)
+	{
+		Stack<ToDoPath> paths = new Stack<ToDoPath>();
+		int i = 0;
+		while (i < logcat.size())
+		{
+			String line = logcat.get(i++);
+			if (line.startsWith("Method_Starting,"))
+			{
+				StaticMethod m = this.staticApp.getMethod(line.split(",")[1]);
+				ToDoPath path = new ToDoPath(m);
+				paths.push(path);
+			}
+			else if (line.startsWith("Method_Returning,"))
+			{
+				ToDoPath path = paths.pop();
+				path.endingStmtID = -1;
+				if (!paths.isEmpty())
+				{
+					ToDoPath outerPath = paths.peek();
+					outerPath.branchOrders.addAll(path.branchOrders);
+				}
+				else
+				{
+					paths.push(path);
+				}
+			}
+			else if (line.startsWith("Method_Throwing,"))
+			{
+				String stmtInfo = line.split(",")[2];
+				int throwStmtID = Integer.parseInt(stmtInfo.split(":")[1]);
+				ToDoPath path = paths.pop();
+				path.endingStmtID = throwStmtID;
+				if (!paths.isEmpty())
+				{
+					ToDoPath outerPath = paths.peek();
+					outerPath.branchOrders.addAll(path.branchOrders);
+				}
+				else
+				{
+					paths.push(path);
+				}
+			}
+			else if (line.startsWith("execLog,"))
+			{
+				String stmtInfo = line.split(",")[1];
+				ToDoPath path = paths.peek();
+				
+				if (line.endsWith(",if"))
+				{
+					String nextLine = logcat.get(i++);
+					String order = stmtInfo + ",jump";
+					if (nextLine.endsWith(",flow_through"))
+					{
+						order = stmtInfo + ",flow";
+					}
+					path.branchOrders.add(order);
+				}
+				
+				else if (line.endsWith(",switch"))
+				{
+					String nextLine = logcat.get(i++);
+					String order = stmtInfo + ",flow";
+					if (!nextLine.endsWith(",flow_through"))
+					{
+						String blockName = line.split(",")[2];
+						blockName = blockName.substring(blockName.indexOf("block")+5);
+						StaticStmt s = this.staticApp.getStmt(stmtInfo);
+						for (Map.Entry<Integer, String> entry : s.getSwitchMap().entrySet())
+						{
+							if (entry.getValue().equals(blockName))
+							{
+								order = stmtInfo + ",case" + entry.getKey();
+								break;
+							}
+						}
+					}
+					path.branchOrders.add(order);
+				}
+				
+				else if (line.endsWith(",try"))
+				{
+					//TODO TBC
+				}
+				else if (line.contains(",block:"))
+				{
+					// maybe nothing needs to be done here
+				}
+			}
+		}
+		if (paths.size() != 1)
+		{
+			System.out.println("Expanding logcat output has failed.");
+			System.exit(1);
+		}
+		ToDoPath p = paths.pop();
+		p.generateExecLogFromOrders(staticApp);
+		return p;
 	}
 	
 	/**
@@ -117,7 +223,7 @@ public class SymbolicExecution {
 		while (unfinished.size() > 0)
 		{
 			ToDoPath p = unfinished.remove(unfinished.size()-1);
-			ArrayList<ToDoPath> finishedTDPs = exploreTDP(unfinished, p, m);
+			ArrayList<ToDoPath> finishedTDPs = exploreTDP(unfinished, p, m, true);
 			if (p.isLegit)
 				result.addAll(finishedTDPs);
 		}
@@ -134,7 +240,7 @@ public class SymbolicExecution {
 		while (unfinished.size() > 0)
 		{
 			ToDoPath p = unfinished.remove(unfinished.size()-1);
-			ArrayList<ToDoPath> finishedTDPs = exploreTDP(unfinished, p, m);
+			ArrayList<ToDoPath> finishedTDPs = exploreTDP(unfinished, p, m, true);
 			if (p.isLegit)
 				result.addAll(finishedTDPs);
 		}
@@ -143,7 +249,7 @@ public class SymbolicExecution {
 	}
 	
 	
-	private ArrayList<ToDoPath> exploreTDP(ArrayList<ToDoPath> tdPList, ToDoPath p, StaticMethod m)
+	private ArrayList<ToDoPath> exploreTDP(ArrayList<ToDoPath> tdPList, ToDoPath p, StaticMethod m, boolean addToDoList)
 	{
 		ArrayList<ToDoPath> result = new ArrayList<ToDoPath>();
 		result.add(p.clone());
@@ -188,9 +294,12 @@ public class SymbolicExecution {
 					else // if no orders to follow, then choose flow through
 					{
 						choice = "flow";
-						ToDoPath newTDP = tdP.copy();
-						newTDP.branchOrders.add(s.getUniqueID() + ",jump");
-						tdPList.add(newTDP);
+						if (addToDoList)
+						{
+							ToDoPath newTDP = tdP.copy();
+							newTDP.branchOrders.add(s.getUniqueID() + ",jump");
+							tdPList.add(newTDP);
+						}
 					}
 					tdP.branchChoices.add(s.getUniqueID()+ "," + choice);
 				}
@@ -213,11 +322,14 @@ public class SymbolicExecution {
 					else // no orders to follow, choose flow through
 					{
 						choice = "flow";
-						for (int caseValue : switchMap.keySet())
+						if (addToDoList)
 						{
-							ToDoPath newTDP = tdP.copy();
-							newTDP.branchOrders.add(s.getUniqueID() + ",case" + caseValue);
-							tdPList.add(newTDP);
+							for (int caseValue : switchMap.keySet())
+							{
+								ToDoPath newTDP = tdP.copy();
+								newTDP.branchOrders.add(s.getUniqueID() + ",case" + caseValue);
+								tdPList.add(newTDP);
+							}
 						}
 					}
 					tdP.branchChoices.add(s.getUniqueID() + "," + choice);
