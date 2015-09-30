@@ -306,6 +306,7 @@ public class StaticMethod {
 		}
 		// Now we can't use the registers from this statement,
 		// have to do a simple symbolic execution
+		System.out.println("gonna use symbolic execution to find a usable register in method " + this.getSignature());
 		SymbolicExecution sex = new SymbolicExecution(staticApp);
 		sex.printStmtInfo = false;
 		ArrayList<ToDoPath> tdP = sex.generateToDoPaths(this, 0, s.getStatementID());
