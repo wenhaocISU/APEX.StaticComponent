@@ -11,6 +11,7 @@ import apex.staticFamily.StaticField;
 import apex.staticFamily.StaticMethod;
 import apex.staticFamily.StaticStmt;
 import apex.symbolic.Expression;
+import apex.symbolic.object.SymbolicArray;
 import apex.symbolic.object.SymbolicObject;
 import apex.symbolic.object.SymbolicString;
 import apex.symbolic.value.LiteralValue;
@@ -74,27 +75,31 @@ public class VMContext {
 		this.objects.add(obj);
 	}
 	
-	
-	
 	/**
 	 * create an Object with given Expression, such
 	 * as: $this-Lcom/my/Class;. Returns the object's
 	 * address
 	 * */
-	public String createObject(Expression ex, String classDexName, boolean createInstanceFields)
+	public String createObject(Expression ex, String type, boolean createInstanceFields)
 	{
-		if (classDexName.equals("Ljava/lang/StringBuilder;"))
+		if (type.equals("Ljava/lang/StringBuilder;"))
 		{
 			SymbolicString stringObj = new SymbolicString(this.objID++, ex);
 			this.addObject(stringObj);
 			return stringObj.getAddress();
+		}
+		if (type.startsWith("["))
+		{
+			SymbolicArray arrayObj = new SymbolicArray(this.objID++, ex);
+			this.addObject(arrayObj);
+			return arrayObj.getAddress();
 		}
 
 		SymbolicObject obj = new SymbolicObject(this.objID++, ex);
 		this.addObject(obj);
 		if (createInstanceFields)
 		{
-			StaticClass c = this.staticApp.getClassByDexName(classDexName);
+			StaticClass c = this.staticApp.getClassByDexName(type);
 			if (c != null)
 			{
 				for (StaticField f : c.getFields())
@@ -106,18 +111,6 @@ public class VMContext {
 			}
 		}
 		return obj.getAddress();
-	}
-	
-	public String createArrayObject(Expression arrayEx)
-	{
-		//TODO
-		return "";
-	}
-	
-	public String createStringObject(Expression stringEx)
-	{
-		//TODO
-		return this.createObject(stringEx.clone(), "String", false);
 	}
 	
 	public String createNewInstance(Expression ex, String classDexName, boolean createInstanceFields)

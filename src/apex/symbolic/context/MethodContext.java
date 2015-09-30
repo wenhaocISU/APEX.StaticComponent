@@ -6,6 +6,8 @@ import apex.parser.DEXParser;
 import apex.staticFamily.StaticMethod;
 import apex.staticFamily.StaticStmt;
 import apex.symbolic.Expression;
+import apex.symbolic.object.SymbolicArray;
+import apex.symbolic.object.SymbolicObject;
 import apex.symbolic.object.solver.StringSolver;
 import apex.symbolic.value.LiteralValue;
 import apex.symbolic.value.ReferenceValue;
@@ -132,8 +134,8 @@ public class MethodContext {
 		{
 			if (right.getContent().equals("$array"))
 			{
-				String address = this.vm.createArrayObject(right);
-				String arrayType = "[" + right.getChild(1);
+				String arrayType = "[" + right.getChild(1).getContent();
+				String address = this.vm.createObject(right, arrayType, false);
 				ReferenceValue arrayRef = new ReferenceValue(new Expression(address), arrayType);
 				this.putResult(arrayRef.clone());
 			}
@@ -218,7 +220,7 @@ public class MethodContext {
 		}
 		else if (right.getContent().equals("$const-string"))
 		{
-			String address = vm.createStringObject(right.clone());
+			String address = vm.createObject(right, "Ljava/lang/String;", false);
 			ReferenceValue v = new ReferenceValue(new Expression(address), "String");
 			this.writeRegister(left.getContent(), v);
 		}
@@ -238,7 +240,12 @@ public class MethodContext {
 		}
 		else if (right.getContent().equals("$array-length"))
 		{
-			//TODO array length
+			//TODO array-length
+			String arrayRegName = right.getChild(0).getContent();
+			SymbolicArray arrayObj = getArrayObject(s, arrayRegName);
+			int length = arrayObj.getLength();
+			LiteralValue v = new LiteralValue(new Expression(length+""), "I");
+			this.writeRegister(left.getContent(), v);
 		}
 		else if (right.getContent().equals("$new-instance"))
 		{
@@ -250,14 +257,38 @@ public class MethodContext {
 		else if (right.getContent().equals("$array"))
 		{
 			//TODO array initiation
+			String arrayType = "[" + right.getChild(1).getContent();
+			Expression arrayEx = right.clone();
+			if (arrayEx.getChildCount() > 2)
+			{
+				for (int i = 2; i < arrayEx.getChildCount(); i++)
+				{	// the index here is always constant, therefore no need to solve
+					Expression elementEx = arrayEx.getChild(i);
+					String value = elementEx.getChild(1).getContent();
+					if (value.startsWith("v")||value.startsWith("p"))
+					{
+						Value eleValue = this.getRegister(value).getValue();
+						
+					}
+				}
+			}
+			String address = this.vm.createObject(arrayEx, arrayType, false);
+			ReferenceValue v = new ReferenceValue(new Expression(address), arrayType);
+			this.writeRegister(left.getContent(), v);
 		}
 		else if (right.getContent().equals("$aget"))
 		{
 			//TODO aget
+			String arrayRegName = right.getChild(0).getContent();
+			SymbolicArray arrayObj = getArrayObject(s, arrayRegName);
+			arrayObj.aget(null);
 		}
 		else if (right.getContent().equals("$aput"))
 		{
 			//TODO aput
+			String arrayRegName = right.getChild(0).getContent();
+			SymbolicArray arrayObj = getArrayObject(s, arrayRegName);
+			arrayObj.aput(null, null);
 		}
 		else if (DEXParser.isArithmaticalOperator(right.getContent()))	// operation of the literals
 		{
@@ -294,6 +325,24 @@ public class MethodContext {
 				this.writeRegister(left.getContent(), v);
 			}
 		}
+	}
+	
+	
+	private SymbolicArray getArrayObject(StaticStmt s, String arrayRegName)
+	{
+		Value arrayRef = this.getRegister(arrayRegName).getValue();
+		if (!(arrayRef instanceof ReferenceValue))
+		{
+			System.out.println("array-length got non-Reference value array at " + s.getUniqueID());
+			System.exit(1);
+		}
+		SymbolicObject arrayObj = this.vm.getObject(arrayRef.getExpression().getContent());
+		if (!(arrayObj instanceof SymbolicArray))
+		{
+			System.out.println("array-length got non-SymbolicArray object array at " + s.getUniqueID());
+			System.exit(1);
+		}
+		return (SymbolicArray)arrayObj;
 	}
 	
 	public void solveInvokeStatement(StaticStmt s)
