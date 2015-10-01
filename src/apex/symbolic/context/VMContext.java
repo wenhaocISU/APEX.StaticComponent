@@ -156,14 +156,33 @@ public class VMContext {
 		}
 	}
 	
+	private void initializeStaticField(SymbolicObject obj, String fieldSig)
+	{
+		if (!obj.getExpression().getContent().equals("$static-fields"))
+		{
+			System.out.println("trying to initialize static fields in an instance object!");
+			System.exit(1);
+		}
+		Expression fieldEx = new Expression("$Fstatic");
+		fieldEx.add(fieldSig);
+		String fieldType = fieldSig.substring(fieldSig.lastIndexOf(":")+1);
+		if (DEXParser.isPrimitiveType(fieldType) || fieldType.equals("Ljava/lang/String;"))
+		{
+			LiteralValue v = new LiteralValue(fieldEx, fieldType);
+			obj.putField(fieldSig, v);
+		}
+		else
+		{
+			String address = this.createObject(fieldEx, fieldType, true);
+			ReferenceValue v = new ReferenceValue(new Expression(address), fieldType);
+			obj.putField(fieldSig, v);
+		}
+	}
+	
 	public String getAddressOfObject(Expression ex)
 	{
 		for (SymbolicObject obj : this.objects)
 		{
-			if (obj.getExpression() == null)
-			{
-				System.out.println();
-			}
 			if (obj.getExpression().equals(ex))
 				return obj.getAddress();
 		}
@@ -299,22 +318,15 @@ public class VMContext {
 		if (address.equals(""))
 		{
 			address = this.createObject(staticClassEx, className, false);
-			String fieldType = fieldSig.substring(fieldSig.lastIndexOf(":")+1);
-			Expression fieldEx = new Expression("$Fstatic");
-			fieldEx.add(fieldSig);
-			if (DEXParser.isPrimitiveType(fieldType) || fieldType.equals("Ljava/lang/String;"))
-			{
-				LiteralValue v = new LiteralValue(fieldEx, fieldType);
-				this.getObject(address).putField(fieldSig, v);
-			}
-			else
-			{
-				String fieldAddr = this.createObject(fieldEx, fieldType, true);
-				ReferenceValue v = new ReferenceValue(new Expression(fieldAddr), fieldType);
-				this.getObject(address).putField(fieldSig, v);
-			}
 		}
-		return this.getObject(address).getField(fieldSig);
+		SymbolicObject obj = this.getObject(address);
+		Value result = obj.getField(fieldSig);
+		if (result == null)
+		{
+			this.initializeStaticField(obj, fieldSig);
+			result = obj.getField(fieldSig);
+		}
+		return result;
 	}
 	
 
@@ -341,6 +353,10 @@ public class VMContext {
 			{
 				Value returnedValue = mc.getRegister(returnedVariable).getValue();
 				this.methodReturnedValue = returnedValue.clone();
+				if (!this.methods.isEmpty())
+				{
+					this.methods.peek().putResult(returnedValue);
+				}
 			}
 		}
 		else

@@ -116,10 +116,6 @@ public class MethodContext {
 	public void applyStatement(StaticStmt s)
 	{
 //deal with APIs
-		if (s.getStatementID() == 36 || s.getStatementID() == 38)
-		{
-			System.out.println();
-		}
 		if (s.isInvokeStmt())
 		{
 			solveInvokeStatement(s);
@@ -179,7 +175,7 @@ public class MethodContext {
 	 * 	vA = $Finstance		$Finstance = vA
 	 * 	vA = $Fstatic		$Fstatic = vA
 	 * 	vA = [arithmatical op]*/
-		else if (right.getContent().startsWith("v"))
+		else if (right.getContent().startsWith("v") || right.getContent().startsWith("p"))
 		{
 			Register sourceReg = this.getRegister(right.getContent());
 			this.writeRegister(left.getContent(), sourceReg.getValue().clone());

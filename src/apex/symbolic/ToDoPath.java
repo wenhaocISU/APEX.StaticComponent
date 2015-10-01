@@ -66,7 +66,6 @@ public class ToDoPath {
 		{
 			System.out.println("ToDoPath getDirection(I) is broken at stmt id " + stmtID);
 			System.out.println("oder index = " + this.orderIndex);
-			this.print();
 			System.exit(1);
 		}
 		return branchChoice.split(",")[1];

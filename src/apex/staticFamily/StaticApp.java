@@ -24,7 +24,8 @@ public class StaticApp {
 /**	Setters	*/
 	public void addClass(StaticClass c)
 	{
-		this.classes.add(c);
+		if (c != null)
+			this.classes.add(c);
 	}
 	
 	public void setPackageName(String packageName)

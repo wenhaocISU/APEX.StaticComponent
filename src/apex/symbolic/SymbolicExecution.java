@@ -103,7 +103,6 @@ public class SymbolicExecution {
 		String methodSig = p.m.getSignature();
 		int id = 0;
 		PathSummary ps = new PathSummary(vm, p, methodSig, id);
-		System.out.println("method sig: " + methodSig);
 		execute(ps, p.execLog, vm);
 		return ps;
 	}
@@ -242,8 +241,11 @@ public class SymbolicExecution {
 		{
 			ToDoPath p = unfinished.remove(unfinished.size()-1);
 			ArrayList<ToDoPath> finishedTDPs = exploreTDP(unfinished, p, m, true);
-			if (p.isLegit)
-				result.addAll(finishedTDPs);
+			for (ToDoPath newP : finishedTDPs)
+			{
+				if (newP.isLegit)
+					result.add(newP);
+			}
 		}
 		result = removeDupe(result);
 		return result;
@@ -383,8 +385,10 @@ public class SymbolicExecution {
 		}
 		for (ToDoPath tdP : result)
 		{
-			if (nextStmtID == tdP.endingStmtID)
+			if (nextStmtID == tdP.endingStmtID && tdP.isLegit)
 				tdP.execLog.add(m.getSignature() + ":" + nextStmtID);
+			if (tdP.endingStmtID != -1 && tdP.execLog.get(tdP.execLog.size()-1).endsWith(":"+tdP.endingStmtID))
+				tdP.isLegit = false;
 			for (String choice : tdP.branchChoices)
 			{
 				String stmtInfo = choice.split(",")[0];

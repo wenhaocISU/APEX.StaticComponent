@@ -274,7 +274,7 @@ public class StaticMethod {
 		}
 		else if (!this.isStatic()&&this.paramTypes.size()>1)
 		{
-			return "p1" + this.paramTypes.get(1);
+			return "p1:" + this.paramTypes.get(1);
 		}
 		
 		// Now there are a lot of local registers, and 0 usable parameter registers
@@ -304,11 +304,12 @@ public class StaticMethod {
 				return write;
 			}
 		}
+		
 		// Now we can't use the registers from this statement,
 		// have to do a simple symbolic execution
-		System.out.println("gonna use symbolic execution to find a usable register in method " + this.getSignature());
+		System.out.println("gonna use symbolic execution to find a usable register in method " + this.getSignature() + " for stmt " + s.getStatementID() + " " + s.getSmaliStmt());
 		SymbolicExecution sex = new SymbolicExecution(staticApp);
-		sex.printStmtInfo = false;
+		sex.printStmtInfo = true;
 		ArrayList<ToDoPath> tdP = sex.generateToDoPaths(this, 0, s.getStatementID());
 		for (ToDoPath p : tdP)
 		{
