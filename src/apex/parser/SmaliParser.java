@@ -9,7 +9,6 @@ import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.concurrent.Callable;
 
-import apex.instrumentor.Blacklist;
 import apex.staticFamily.StaticClass;
 import apex.staticFamily.StaticField;
 import apex.staticFamily.StaticMethod;
@@ -50,11 +49,6 @@ public class SmaliParser implements Callable<StaticClass>{
 			if (line.startsWith(".class "))
 			{
 				c = new StaticClass(line);
-				if (Blacklist.classInBlackList(c.getDexName()))
-				{
-					in.close();
-					return null;
-				}
 			}
 			else if (line.startsWith(".super "))
 			{

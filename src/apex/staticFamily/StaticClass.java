@@ -3,7 +3,7 @@ package apex.staticFamily;
 import java.util.ArrayList;
 import java.util.List;
 
-import apex.instrumentor.Blacklist;
+import apex.instrumentor.InstrumentationBlacklist;
 import apex.instrumentor.Instrumentor;
 
 
@@ -240,7 +240,7 @@ public class StaticClass {
 	{
 		for (StaticMethod m : this.methods)
 		{
-			if (instrumentor.blackListOn && Blacklist.methodInBlackList(m.getSignature()))
+			if (instrumentor.blackListOn && InstrumentationBlacklist.methodInBlackList(m.getSignature()))
 				continue;
 			m.instrument(staticApp, instrumentor);
 		}

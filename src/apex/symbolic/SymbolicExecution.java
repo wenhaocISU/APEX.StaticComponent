@@ -6,8 +6,10 @@ import java.util.Map;
 import java.util.Stack;
 
 import apex.staticFamily.StaticApp;
+import apex.staticFamily.StaticClass;
 import apex.staticFamily.StaticMethod;
 import apex.staticFamily.StaticStmt;
+import apex.symbolic.context.MethodContext;
 import apex.symbolic.context.VMContext;
 
 public class SymbolicExecution {
@@ -15,6 +17,7 @@ public class SymbolicExecution {
 	private StaticApp staticApp;
 	public boolean printStmtInfo = false;
 	public boolean printVMStatus = false;
+	public boolean TDPVerbose = false;
 	
 	public SymbolicExecution(StaticApp staticApp)
 	{
@@ -34,6 +37,7 @@ public class SymbolicExecution {
 		for (ToDoPath p : pathList)
 		{
 			VMContext vm = new VMContext(this.staticApp);
+			System.out.println("Symbolically executing: " + m.getSignature() + " #" + id);
 			result.add(this.doFullSymbolic(vm, p, m.getSignature(), id++));
 		}
 		return result;
@@ -55,6 +59,11 @@ public class SymbolicExecution {
 				String choice = stmtInfo.substring(stmtInfo.indexOf(",")+1);
 				stmtInfo = stmtInfo.substring(0, stmtInfo.indexOf(","));
 				StaticStmt s = staticApp.getStmt(stmtInfo);
+				if (s.isFirstStmtOfMethod())
+				{
+					MethodContext mc = new MethodContext(s.getContainingMethod(), vm);
+					vm.push(mc);
+				}
 				if (s.isIfStmt())
 				{
 					Expression cond = s.getIfJumpCondition();
@@ -264,12 +273,15 @@ public class SymbolicExecution {
 		int nextStmtID = p.startingStmtID;
 		while (nextStmtID != p.endingStmtID)
 		{
-			
 			StaticStmt s = m.getStatements().get(nextStmtID++);
 			if (s == null)
 			{
 				System.out.println("SymbolicExecution.exploreTDP() ran into null StaticStmt.");
 				System.exit(1);
+			}
+			if (this.TDPVerbose)
+			{
+				System.out.println("[" + s.getUniqueID() + "]");
 			}
 			for (ToDoPath tdP : result)
 				tdP.execLog.add(s.getUniqueID());
@@ -367,23 +379,28 @@ public class SymbolicExecution {
 				//TODO deal with inheritance sometime
 				// can use ranged symbolic execution to find out the type of p0
 				String targetSig = s.getInvokeSignature();
-				StaticMethod targetM = this.staticApp.getMethod(targetSig);
-				if (targetM != null && !targetM.isAbstract())
+				String className = targetSig.split("->")[0];
+				StaticClass c = this.staticApp.getClassByDexName(className);
+				if (c != null && !SymbolicExecutionBlacklist.classInBlackList(className))
 				{
-					ArrayList<ToDoPath> invokedTDPs = this.generateToDoPaths(targetM, 0, -1, false);
-					ArrayList<ToDoPath> newResult = new ArrayList<ToDoPath>();
-					for (ToDoPath tdP : result)
+					StaticMethod targetM = this.staticApp.getMethod(targetSig);
+					if (targetM != null && !targetM.isAbstract())
 					{
-						for (ToDoPath invkTDP: invokedTDPs)
+						ArrayList<ToDoPath> invokedTDPs = this.generateToDoPaths(targetM, 0, -1, false);
+						ArrayList<ToDoPath> newResult = new ArrayList<ToDoPath>();
+						for (ToDoPath tdP : result)
 						{
-							ToDoPath newP = tdP.clone();
-							newP.branchChoices.addAll(invkTDP.branchChoices);
-							newP.execLog.addAll(invkTDP.execLog);
-							newP.orderIndex += invkTDP.branchChoices.size();
-							newResult.add(newP);
+							for (ToDoPath invkTDP: invokedTDPs)
+							{
+								ToDoPath newP = tdP.clone();
+								newP.branchChoices.addAll(invkTDP.branchChoices);
+								newP.execLog.addAll(invkTDP.execLog);
+								newP.orderIndex += invkTDP.branchChoices.size();
+								newResult.add(newP);
+							}
 						}
+						result = new ArrayList<ToDoPath>(newResult);
 					}
-					result = new ArrayList<ToDoPath>(newResult);
 				}
 			}
 		}

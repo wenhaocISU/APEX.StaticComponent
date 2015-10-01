@@ -7,10 +7,10 @@ import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.List;
 
-import apex.instrumentor.Blacklist;
-import apex.instrumentor.Instrumentor;
 import tools.Apktool;
 import tools.Jarsigner;
+import apex.instrumentor.InstrumentationBlacklist;
+import apex.instrumentor.Instrumentor;
 
 public class StaticApp {
 
@@ -60,7 +60,7 @@ public class StaticApp {
 				+File.separator+"Println.smali");
 		for (StaticClass c : this.classes)
 		{
-			if (instrumentor.blackListOn && Blacklist.classInBlackList(c.getDexName()))
+			if (instrumentor.blackListOn && InstrumentationBlacklist.classInBlackList(c.getDexName()))
 				continue;
 			File smaliFile = new File(c.getInstrumentedSmaliPath());
 			smaliFile.getParentFile().mkdirs();

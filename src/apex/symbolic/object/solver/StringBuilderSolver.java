@@ -19,7 +19,7 @@ public class StringBuilderSolver {
 		"Ljava/lang/StringBuilder;->toString()Ljava/lang/String;",
 	};
 	
-	public static boolean isSolvableStringBuilderAPI(String invokeSig)
+	public static boolean solvable(String invokeSig)
 	{
 		for (String ss : SB_signatures)
 		{

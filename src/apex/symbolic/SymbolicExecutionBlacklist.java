@@ -1,11 +1,10 @@
-package apex.instrumentor;
+package apex.symbolic;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 
-public class Blacklist {
+public class SymbolicExecutionBlacklist {
 
-	
 	
 	public static ArrayList<String> classes = new ArrayList<String>(Arrays.asList(
 			"Landroid/app/*",
@@ -15,7 +14,6 @@ public class Blacklist {
 			"Lcom/example/androidtest/R*",
 			"Lcom/actionbarsherlock/*",
 			"Lcom/flurry/sdk/*",
-			"Lcom/flurry/android/*",
 			"Lorg/kobjects/*",
 			"Lorg/ksoap2/*",
 			"Lorg/kxml2/*",
@@ -46,5 +44,4 @@ public class Blacklist {
 		return methods.contains(methodSig);
 	}
 	
-
 }

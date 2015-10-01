@@ -3,9 +3,11 @@ package apex.symbolic.context;
 import java.util.ArrayList;
 
 import apex.parser.DEXParser;
+import apex.staticFamily.StaticClass;
 import apex.staticFamily.StaticMethod;
 import apex.staticFamily.StaticStmt;
 import apex.symbolic.Expression;
+import apex.symbolic.SymbolicExecutionBlacklist;
 import apex.symbolic.object.SymbolicArray;
 import apex.symbolic.object.SymbolicObject;
 import apex.symbolic.object.solver.StringBuilderSolver;
@@ -180,6 +182,13 @@ public class MethodContext {
 			Register sourceReg = this.getRegister(right.getContent());
 			this.writeRegister(left.getContent(), sourceReg.getValue().clone());
 		}
+		else if (right.getContent().equals("$this"))
+		{
+			String className = right.getChild(0).getContent();
+			String address = this.vm.createOrFindObjectThis(className);
+			ReferenceValue v = new ReferenceValue(new Expression(address), className);
+			this.writeRegister(left.getContent(), v);
+		}
 		else if (right.getContent().equals("$Finstance"))
 		{
 			String fieldSig = right.getChild(0).getContent();
@@ -238,7 +247,6 @@ public class MethodContext {
 		}
 		else if (right.getContent().equals("$array-length"))
 		{
-			//TODO array-length
 			String arrayRegName = right.getChild(0).getContent();
 			SymbolicArray arrayObj = getArrayObject(s, arrayRegName);
 			int length = arrayObj.getLength();
@@ -292,7 +300,6 @@ public class MethodContext {
 		}
 		else if (right.getContent().equals("$aget"))
 		{
-			//TODO aget
 			String arrayRegName = right.getChild(0).getContent();
 			String indexRegName = right.getChild(1).getContent();
 			SymbolicArray arrayObj = getArrayObject(s, arrayRegName);
@@ -307,7 +314,6 @@ public class MethodContext {
 		}
 		else if (right.getContent().equals("$aput"))
 		{
-			//TODO aput
 			String arrayRegName = right.getChild(0).getContent();
 			String indexRegName = right.getChild(1).getContent();
 			SymbolicArray arrayObj = getArrayObject(s, arrayRegName);
@@ -331,11 +337,15 @@ public class MethodContext {
 			}
 			else	// the rest has 3 op fields
 			{
-				Expression result = new Expression(ex.getContent());
+				if (s.getSmaliStmt().equals("div-double/2addr v0, v2"))
+				{
+					System.out.println();
+				}
+				Expression result = new Expression(right.getContent());
 				for (int i = 0; i < 2; i++)
 				{
 					String regName = right.getChild(i).getContent();
-					if (!regName.startsWith("v") && !regName.startsWith("p"))
+					if (regName.startsWith("v") || regName.startsWith("p"))
 					{
 						Value v = this.getRegister(regName).getValue();
 						if (!(v instanceof LiteralValue))
@@ -381,38 +391,54 @@ public class MethodContext {
 			return;
 		String invokeSig = s.getInvokeSignature();
 		StaticMethod targetM = this.vm.staticApp.getMethod(invokeSig);
-		if (targetM != null)
+		if (targetM != null && !SymbolicExecutionBlacklist.classInBlackList(targetM.getDeclaringClass().getDexName()))
 			return;
-		if (StringBuilderSolver.isSolvableStringBuilderAPI(invokeSig))
+		if (StringBuilderSolver.solvable(invokeSig))
 		{
 			StringBuilderSolver.solve(vm, this, s);
 		}
 		else if (!invokeSig.endsWith(")V"))
 		{
-			// just replace each parameter reg name with its value
-			// create a corresponding Literal/Reference value
-			// and put it in this.recentInvokeResult
 			ArrayList<String> params = s.getInvokeParameters();
-			Expression resultEx = new Expression("$api");
-			resultEx.add(invokeSig);
-			for (int i = 0; i < params.size(); i++)
-			{
-				String piRegName = params.get(i);
-				Value piValue = this.getRegister(piRegName).getValue();
-				if (piValue != null)
-					resultEx.add(piValue.getExpression().clone());
-			}
 			String returnType = invokeSig.substring(invokeSig.lastIndexOf(")")+1);
-			if (DEXParser.isPrimitiveType(returnType) || returnType.equals("Ljava/lang/String;"))
+			if (	params.size() == 1 && 
+					!s.getBytecodeOperator().startsWith("invoke-static") &&
+					this.vm.staticApp.getClassByDexName(this.getRegister(params.get(0)).getValue().getType())!= null
+				)
 			{
-				LiteralValue v = new LiteralValue(resultEx, returnType);
-				this.putResult(v);
+				// in this case, we just create a fake field for that object
+				// and change invoke into iget, and put result
+				ReferenceValue thisReference = (ReferenceValue) this.getRegister(params.get(0)).getValue();
+				String fakeFieldName = "apex_" + invokeSig.substring(invokeSig.indexOf("->")+2, invokeSig.indexOf("("));
+				String fakeFieldSubSig = fakeFieldName + ":" + returnType;
+				String fakeFieldSig = thisReference.getType() + "->" + fakeFieldSubSig;
+				this.putResult(this.vm.iget(thisReference, fakeFieldSig));
 			}
 			else
 			{
-				String address = this.vm.createObject(resultEx, returnType, true);
-				ReferenceValue v = new ReferenceValue(new Expression(address), returnType);
-				this.putResult(v);
+				// just replace each parameter reg name with its value
+				// create a corresponding Literal/Reference value
+				// and put it in this.recentInvokeResult
+				Expression resultEx = new Expression("$api");
+				resultEx.add(invokeSig);
+				for (int i = 0; i < params.size(); i++)
+				{
+					String piRegName = params.get(i);
+					Value piValue = this.getRegister(piRegName).getValue();
+					if (piValue != null)
+						resultEx.add(piValue.getExpression().clone());
+				}
+				if (DEXParser.isPrimitiveType(returnType) || returnType.equals("Ljava/lang/String;"))
+				{
+					LiteralValue v = new LiteralValue(resultEx, returnType);
+					this.putResult(v);
+				}
+				else
+				{
+					String address = this.vm.createObject(resultEx, returnType, !SymbolicExecutionBlacklist.classInBlackList(returnType));
+					ReferenceValue v = new ReferenceValue(new Expression(address), returnType);
+					this.putResult(v);
+				}
 			}
 		}
 	}

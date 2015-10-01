@@ -126,6 +126,7 @@ public class PathSummary {
 	
 	public ArrayList<Expression> getSymbolicStates()
 	{
+		this.printVMContext();
 		if (this.symbolicStates == null)
 		{
 			this.symbolicStates = new ArrayList<Expression>();
@@ -154,6 +155,7 @@ public class PathSummary {
 	 * */
 	private void reportFieldState(Map.Entry<String, Value> entry, Expression objSymbolicExpression)
 	{
+		System.out.println("[Oct1] " + entry.getKey());
 		Expression symbolicState = new Expression("$Finstance");
 		symbolicState.add(entry.getKey());
 		symbolicState.add(objSymbolicExpression.clone());
@@ -214,14 +216,18 @@ public class PathSummary {
 	
 	public void print()
 	{
-		System.out.println("\nPath Summary No." + id + " for method " + methodSignature);
+		System.out.println("\n_______________________________________________________________________");
+		System.out.println("Path Summary No." + id + " for method " + methodSignature);
 		System.out.println("Execution Log:");
 		for (String s : this.executionLog)
 		{
 			String stmtInfo = s.contains(",")? s.substring(0, s.indexOf(",")) : s;
 			StaticStmt stmt = this.vm.getStaticApp().getStmt(stmtInfo);
+			String id = stmtInfo.substring(stmtInfo.indexOf(":")+1);
 			if (stmt.isFirstStmtOfMethod())
-				System.out.println("\n" + stmt.getContainingMethod().getDeclaration() + "\n " + s + " " + stmt.getSmaliStmt());
+				System.out.println(stmt.getContainingMethod().getDeclaration() + "\n " + id + " " + stmt.getSmaliStmt());
+			else
+				System.out.println(" " + id + " " + stmt.getSmaliStmt());
 		}
 		System.out.println("Symbolic States:");
 		for (Expression ex : this.getSymbolicStates())

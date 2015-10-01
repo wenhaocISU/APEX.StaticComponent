@@ -119,7 +119,7 @@ public class VMContext {
 		return this.createObject(objEx, classDexName, createInstanceFields);
 	}
 	
-	private void initializeField(SymbolicObject obj, StaticField f)
+	public void initializeField(SymbolicObject obj, StaticField f)
 	{
 		Expression fieldEx = new Expression("$Finstance");
 		fieldEx.add(f.getSignature());
@@ -137,7 +137,7 @@ public class VMContext {
 		}
 	}
 	
-	private void initializeField(SymbolicObject obj, String fieldSig)
+	public void initializeField(SymbolicObject obj, String fieldSig)
 	{
 		Expression fieldEx = new Expression("$Finstance");
 		fieldEx.add(fieldSig);
@@ -156,7 +156,7 @@ public class VMContext {
 		}
 	}
 	
-	private void initializeStaticField(SymbolicObject obj, String fieldSig)
+	public void initializeStaticField(SymbolicObject obj, String fieldSig)
 	{
 		if (!obj.getExpression().getContent().equals("$static-fields"))
 		{
@@ -235,7 +235,7 @@ public class VMContext {
 		// Right part. Could be 0/null, or a register
 		if (rightReg.equals("0"))
 		{
-			if ((leftV instanceof ReferenceValue))
+			if ((leftV instanceof ReferenceValue) || leftV.getType().equals("Ljava/lang/String;"))
 				result.add("null");
 			else
 				result.add("0");
@@ -264,7 +264,6 @@ public class VMContext {
 			System.out.println("VMContext.iput() can't find the object!");
 			System.exit(1);
 		}
-		
 		obj.putField(fieldSig, value);
 	}
 	
