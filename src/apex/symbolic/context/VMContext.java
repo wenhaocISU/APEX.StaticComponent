@@ -160,6 +160,10 @@ public class VMContext {
 	{
 		for (SymbolicObject obj : this.objects)
 		{
+			if (obj.getExpression() == null)
+			{
+				System.out.println();
+			}
 			if (obj.getExpression().equals(ex))
 				return obj.getAddress();
 		}

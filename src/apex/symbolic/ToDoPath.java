@@ -80,9 +80,6 @@ public class ToDoPath {
 	
 	public void generateExecLogFromOrders(StaticApp staticApp)
 	{
-		System.out.println("___________________________");
-		this.print();
-		System.out.println("---------------------------");
 		this.execLog = new ArrayList<String>();
 		Stack<StaticMethod> methods = new Stack<StaticMethod>();
 		Stack<Integer> stmtIDs = new Stack<Integer>();

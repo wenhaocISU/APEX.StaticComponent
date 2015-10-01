@@ -30,6 +30,7 @@ public class SymbolicArray extends SymbolicObject{
 		super(birthday);
 		
 		this.initArrayEx = initialArrayEx.clone();
+		this.expression = this.initArrayEx.clone();
 		if (initialArrayEx.getContent().equals("$array"))
 		{
 			this.length = Integer.parseInt(initialArrayEx.getChild(0).getContent());

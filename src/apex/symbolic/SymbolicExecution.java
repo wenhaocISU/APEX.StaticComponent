@@ -103,6 +103,7 @@ public class SymbolicExecution {
 		String methodSig = p.m.getSignature();
 		int id = 0;
 		PathSummary ps = new PathSummary(vm, p, methodSig, id);
+		System.out.println("method sig: " + methodSig);
 		execute(ps, p.execLog, vm);
 		return ps;
 	}

@@ -45,7 +45,8 @@ public class StringBuilderSolver {
 		String methodSig = s.getInvokeSignature();
 		int index = getSignatureIndex(methodSig);
 		if (index == 0)
-		{}
+		{
+		}
 		else if (index == 1)	// no return
 		{
 			LiteralValue v = findParameterValue(vm, mc, s);

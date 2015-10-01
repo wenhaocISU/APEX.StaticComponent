@@ -116,12 +116,15 @@ public class MethodContext {
 	public void applyStatement(StaticStmt s)
 	{
 //deal with APIs
+		if (s.getStatementID() == 36 || s.getStatementID() == 38)
+		{
+			System.out.println();
+		}
 		if (s.isInvokeStmt())
 		{
 			solveInvokeStatement(s);
 			return;
 		}
-		
 		Expression ex = s.getOperationExpression();
 		if (ex.getContent().equals(""))
 		{
