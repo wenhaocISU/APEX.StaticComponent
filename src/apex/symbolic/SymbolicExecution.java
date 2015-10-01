@@ -23,6 +23,11 @@ public class SymbolicExecution {
 	
 	public List<PathSummary> doFullSymbolic(StaticMethod m)
 	{
+		if (m == null)
+		{
+			System.out.println("StaticMethod object is null!");
+			System.exit(1);
+		}
 		List<PathSummary> result = new ArrayList<PathSummary>();
 		List<ToDoPath> pathList = this.generateToDoPaths(m, 0, -1);
 		int id = 0;
@@ -348,7 +353,6 @@ public class SymbolicExecution {
 				{
 					if (tdP.endingStmtID == -1) // natural ending
 					{
-						tdP.endingStmtID = s.getStatementID();
 						tdP.isLegit = true;
 					}
 					else // this isn't the ending we wanted, this ToDoPath will be discarded

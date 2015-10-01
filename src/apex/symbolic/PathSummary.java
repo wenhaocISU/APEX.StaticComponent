@@ -3,6 +3,7 @@ package apex.symbolic;
 import java.util.ArrayList;
 import java.util.Map;
 
+import apex.staticFamily.StaticStmt;
 import apex.symbolic.context.VMContext;
 import apex.symbolic.object.SymbolicObject;
 import apex.symbolic.value.LiteralValue;
@@ -216,7 +217,12 @@ public class PathSummary {
 		System.out.println("\nPath Summary No." + id + " for method " + methodSignature);
 		System.out.println("Execution Log:");
 		for (String s : this.executionLog)
-			System.out.println(" " + s);
+		{
+			String stmtInfo = s.contains(",")? s.substring(0, s.indexOf(",")) : s;
+			StaticStmt stmt = this.vm.getStaticApp().getStmt(stmtInfo);
+			if (stmt.isFirstStmtOfMethod())
+				System.out.println("\n" + stmt.getContainingMethod().getDeclaration() + "\n " + s + " " + stmt.getSmaliStmt());
+		}
 		System.out.println("Symbolic States:");
 		for (Expression ex : this.getSymbolicStates())
 			System.out.println(" " + ex.toYicesStatement());
