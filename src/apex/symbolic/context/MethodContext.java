@@ -10,6 +10,8 @@ import apex.symbolic.Expression;
 import apex.symbolic.SymbolicExecutionBlacklist;
 import apex.symbolic.object.SymbolicArray;
 import apex.symbolic.object.SymbolicObject;
+import apex.symbolic.object.solver.Controller;
+import apex.symbolic.object.solver.NumberConversionSolver;
 import apex.symbolic.object.solver.StringBuilderSolver;
 import apex.symbolic.value.LiteralValue;
 import apex.symbolic.value.ReferenceValue;
@@ -95,26 +97,7 @@ public class MethodContext {
 		}
 	}
 	
-	/**
-	 * Parse statement, and apply corresponding operations
-	 * on method context and/or vm context.
-	 * Possible operation types:
-	 * 	vA = vB
-	 * 	vA = $result
-	 * 	vA = $number
-	 * 	vA = $const-string
-	 * 	vA = $const-class
-	 * 	vA = $instance-of
-	 * 	vA = $array-length
-	 * 	vA = $new-instance
-	 * 	vA = $array
-	 * 	vA = $aget
-	 * 	vA = $aput
-	 * 	vA = $Finstance		$Finstance = vA
-	 * 	vA = $Fstatic		$Fstatic = vA
-	 * 	vA = [arithmatical op]
-	 * 	$result = $array
-	 * */
+
 	public void applyStatement(StaticStmt s)
 	{
 //deal with APIs
@@ -163,20 +146,7 @@ public class MethodContext {
 			String fieldSig = left.getChild(0).getContent();
 			this.vm.sput(fieldSig, sourceReg.getValue().clone());
 		}
-/** 	vA = vB
-	 * 	vA = $result
-	 * 	vA = $number
-	 * 	vA = $const-string
-	 * 	vA = $const-class
-	 * 	vA = $instance-of
-	 * 	vA = $array-length
-	 * 	vA = $new-instance
-	 * 	vA = $array
-	 * 	vA = $aget
-	 * 	vA = $aput
-	 * 	vA = $Finstance		$Finstance = vA
-	 * 	vA = $Fstatic		$Fstatic = vA
-	 * 	vA = [arithmatical op]*/
+// vA = ...
 		else if (right.getContent().startsWith("v") || right.getContent().startsWith("p"))
 		{
 			Register sourceReg = this.getRegister(right.getContent());
@@ -393,10 +363,8 @@ public class MethodContext {
 		StaticMethod targetM = this.vm.staticApp.getMethod(invokeSig);
 		if (targetM != null && !SymbolicExecutionBlacklist.classInBlackList(targetM.getDeclaringClass().getDexName()))
 			return;
-		if (StringBuilderSolver.solvable(invokeSig))
-		{
-			StringBuilderSolver.solve(vm, this, s);
-		}
+		if (Controller.tryAllSolvers(vm, this, s))
+		{}
 		else if (!invokeSig.endsWith(")V"))
 		{
 			ArrayList<String> params = s.getInvokeParameters();
