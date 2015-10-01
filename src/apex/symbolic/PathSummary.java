@@ -155,7 +155,6 @@ public class PathSummary {
 	 * */
 	private void reportFieldState(Map.Entry<String, Value> entry, Expression objSymbolicExpression)
 	{
-		System.out.println("[Oct1] " + entry.getKey());
 		Expression symbolicState = new Expression("$Finstance");
 		symbolicState.add(entry.getKey());
 		symbolicState.add(objSymbolicExpression.clone());

@@ -11,6 +11,7 @@ import apex.staticFamily.StaticMethod;
 import apex.staticFamily.StaticStmt;
 import apex.symbolic.context.MethodContext;
 import apex.symbolic.context.VMContext;
+import apex.symbolic.value.Thrower;
 
 public class SymbolicExecution {
 
@@ -28,8 +29,7 @@ public class SymbolicExecution {
 	{
 		if (m == null)
 		{
-			System.out.println("StaticMethod object is null!");
-			System.exit(1);
+			Thrower.throwException("StaticMethod object is null!");
 		}
 		List<PathSummary> result = new ArrayList<PathSummary>();
 		List<ToDoPath> pathList = this.generateToDoPaths(m, 0, -1);
@@ -213,8 +213,7 @@ public class SymbolicExecution {
 		}
 		if (paths.size() != 1)
 		{
-			System.out.println("Expanding logcat output has failed.");
-			System.exit(1);
+			Thrower.throwException("Expanding logcat output has failed.");
 		}
 		ToDoPath p = paths.pop();
 		p.generateExecLogFromOrders(staticApp);
@@ -276,8 +275,7 @@ public class SymbolicExecution {
 			StaticStmt s = m.getStatements().get(nextStmtID++);
 			if (s == null)
 			{
-				System.out.println("SymbolicExecution.exploreTDP() ran into null StaticStmt.");
-				System.exit(1);
+				Thrower.throwException("SymbolicExecution.exploreTDP() ran into null StaticStmt.");
 			}
 			if (this.TDPVerbose)
 			{

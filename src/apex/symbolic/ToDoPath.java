@@ -7,6 +7,7 @@ import java.util.Stack;
 import apex.staticFamily.StaticApp;
 import apex.staticFamily.StaticMethod;
 import apex.staticFamily.StaticStmt;
+import apex.symbolic.value.Thrower;
 
 public class ToDoPath {
 	
@@ -64,9 +65,7 @@ public class ToDoPath {
 		String branchChoice = this.branchOrders.get(orderIndex);
 		if (!branchChoice.startsWith(stmtID + ","))
 		{
-			System.out.println("ToDoPath getDirection(I) is broken at stmt id " + stmtID);
-			System.out.println("oder index = " + this.orderIndex);
-			System.exit(1);
+			Thrower.throwException("ToDoPath getDirection(I) is broken at stmt id " + stmtID);
 		}
 		return branchChoice.split(",")[1];
 	}
@@ -92,8 +91,7 @@ public class ToDoPath {
 			StaticStmt s = methods.peek().getStatements().get(nextStmtID);
 			if (s == null)
 			{
-				System.out.println("ToDoPath.generateExecLogFromOrders() ran into null StaticStmt.");
-				System.exit(1);
+				Thrower.throwException("ToDoPath.generateExecLogFromOrders() ran into null StaticStmt.");
 			}
 			this.execLog.add(s.getUniqueID());
 			if (this.endingStmtID == s.getStatementID() && methods.peek().getSignature().equals(this.m.getSignature()))
@@ -123,8 +121,7 @@ public class ToDoPath {
 				}
 				else
 				{
-					System.out.println("ToDoPath.generateExecLogFromOrders() failed to find an order.");
-					System.exit(1);
+					Thrower.throwException("ToDoPath.generateExecLogFromOrders() failed to find an order.");
 				}
 				this.branchChoices.add(s.getUniqueID()+","+choice);
 			}
@@ -144,8 +141,7 @@ public class ToDoPath {
 				}
 				else
 				{
-					System.out.println("ToDoPath.generateExecLogFromOrders() failed to find an order.");
-					System.exit(1);
+					Thrower.throwException("ToDoPath.generateExecLogFromOrders() failed to find an order.");
 				}
 				this.branchChoices.add(s.getUniqueID() + "," + choice);
 			}

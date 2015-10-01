@@ -1,4 +1,4 @@
-package apex.symbolic.object.solver;
+package apex.symbolic.object.model;
 
 import apex.staticFamily.StaticStmt;
 import apex.symbolic.Expression;
@@ -8,9 +8,10 @@ import apex.symbolic.object.SymbolicObject;
 import apex.symbolic.object.SymbolicStringBuilder;
 import apex.symbolic.value.LiteralValue;
 import apex.symbolic.value.ReferenceValue;
+import apex.symbolic.value.Thrower;
 import apex.symbolic.value.Value;
 
-public class StringBuilderSolver {
+public class StringBuilderModel {
 
 	private static final String[] SB_signatures = {
 		"Ljava/lang/StringBuilder;-><init>()V",
@@ -19,7 +20,7 @@ public class StringBuilderSolver {
 		"Ljava/lang/StringBuilder;->toString()Ljava/lang/String;",
 	};
 	
-	public static boolean solvable(String invokeSig)
+	public static boolean canHandle(String invokeSig)
 	{
 		for (String ss : SB_signatures)
 		{
@@ -39,7 +40,7 @@ public class StringBuilderSolver {
 		return -1;
 	}
 	
-	public static void solve(VMContext vm, MethodContext mc, StaticStmt s)
+	public static void apply(VMContext vm, MethodContext mc, StaticStmt s)
 	{
 		SymbolicStringBuilder ss = findSymbolicStringObject(vm, mc, s);
 		String methodSig = s.getInvokeSignature();
@@ -73,14 +74,12 @@ public class StringBuilderSolver {
 		Value p0RegValue = mc.getRegister(p0RegName).getValue();
 		if (!(p0RegValue instanceof ReferenceValue))
 		{
-			System.out.println("StringBuilder API p0 is not a Reference Value at " + s.getUniqueID());
-			System.exit(1);
+			Thrower.throwException("StringBuilder API p0 is not a Reference Value at " + s.getUniqueID());
 		}
 		SymbolicObject stringObject = vm.getObject(p0RegValue.getExpression().getContent());
 		if (!(stringObject instanceof SymbolicStringBuilder))
 		{
-			System.out.println("StringBuilder object type is not SymbolicString at " + s.getUniqueID());
-			System.exit(1);
+			Thrower.throwException("StringBuilder object type is not SymbolicString at " + s.getUniqueID());
 		}
 		return ((SymbolicStringBuilder) stringObject);
 	}

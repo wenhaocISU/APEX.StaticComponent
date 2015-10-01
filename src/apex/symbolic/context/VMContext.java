@@ -16,6 +16,7 @@ import apex.symbolic.object.SymbolicObject;
 import apex.symbolic.object.SymbolicStringBuilder;
 import apex.symbolic.value.LiteralValue;
 import apex.symbolic.value.ReferenceValue;
+import apex.symbolic.value.Thrower;
 import apex.symbolic.value.Value;
 
 public class VMContext {
@@ -160,8 +161,7 @@ public class VMContext {
 	{
 		if (!obj.getExpression().getContent().equals("$static-fields"))
 		{
-			System.out.println("trying to initialize static fields in an instance object!");
-			System.exit(1);
+			Thrower.throwException("trying to initialize static fields in an instance object!");
 		}
 		Expression fieldEx = new Expression("$Fstatic");
 		fieldEx.add(fieldSig);
@@ -261,8 +261,7 @@ public class VMContext {
 		SymbolicObject obj = this.getObject(objRef.getAddress());
 		if (obj == null)
 		{
-			System.out.println("VMContext.iput() can't find the object!");
-			System.exit(1);
+			Thrower.throwException("VMContext.iput() can't find the object!");
 		}
 		obj.putField(fieldSig, value);
 	}
@@ -283,8 +282,7 @@ public class VMContext {
 		SymbolicObject obj = this.getObject(objRef.getAddress());
 		if (obj == null)
 		{
-			System.out.println("VMContext.iget() can't find the object!");
-			System.exit(1);
+			Thrower.throwException("VMContext.iget() can't find the object!");
 		}
 		Value fieldValue = obj.getField(fieldSig);
 		while (fieldValue == null)

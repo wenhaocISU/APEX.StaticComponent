@@ -3,18 +3,16 @@ package apex.symbolic.context;
 import java.util.ArrayList;
 
 import apex.parser.DEXParser;
-import apex.staticFamily.StaticClass;
 import apex.staticFamily.StaticMethod;
 import apex.staticFamily.StaticStmt;
 import apex.symbolic.Expression;
 import apex.symbolic.SymbolicExecutionBlacklist;
 import apex.symbolic.object.SymbolicArray;
 import apex.symbolic.object.SymbolicObject;
-import apex.symbolic.object.solver.Controller;
-import apex.symbolic.object.solver.NumberConversionSolver;
-import apex.symbolic.object.solver.StringBuilderSolver;
+import apex.symbolic.object.model.Controller;
 import apex.symbolic.value.LiteralValue;
 import apex.symbolic.value.ReferenceValue;
+import apex.symbolic.value.Thrower;
 import apex.symbolic.value.Value;
 
 public class MethodContext {
@@ -103,7 +101,7 @@ public class MethodContext {
 //deal with APIs
 		if (s.isInvokeStmt())
 		{
-			solveInvokeStatement(s);
+			modelInvokeStatement(s);
 			return;
 		}
 		Expression ex = s.getOperationExpression();
@@ -133,8 +131,7 @@ public class MethodContext {
 			Register objReg = this.getRegister(objRegName);
 			if (!(objReg.getValue() instanceof ReferenceValue))
 			{
-				System.out.println("$Finstance object register not holding ReferenceValue at " + s.getUniqueID());
-				System.exit(1);
+				Thrower.throwException("$Finstance object register not holding ReferenceValue at " + s.getUniqueID());
 			}
 			ReferenceValue objRef = (ReferenceValue)objReg.getValue();
 			this.vm.iput(objRef, fieldSig, sourceReg.getValue().clone());
@@ -166,8 +163,7 @@ public class MethodContext {
 			Register objReg = this.getRegister(objRegName);
 			if (!(objReg.getValue() instanceof ReferenceValue))
 			{
-				System.out.println("$Finstance object register not holding ReferenceValue at " + s.getUniqueID());
-				System.exit(1);
+				Thrower.throwException("$Finstance object register not holding ReferenceValue at " + s.getUniqueID());
 			}
 			ReferenceValue objRef = (ReferenceValue)objReg.getValue();
 			Value fieldValue = this.vm.iget(objRef, fieldSig);
@@ -262,8 +258,7 @@ public class MethodContext {
 				}
 				else
 				{
-					System.out.println("$array Expression element is neither register nor number");
-					System.exit(1);
+					Thrower.throwException("$array Expression element is neither register nor number");
 				}
 			}
 
@@ -276,8 +271,7 @@ public class MethodContext {
 			Value index = this.getRegister(indexRegName).getValue();
 			if (!(index instanceof LiteralValue))
 			{
-				System.out.println("aget index is not LiteralValue at " + s.getUniqueID());
-				System.exit(1);
+				Thrower.throwException("aget index is not LiteralValue at " + s.getUniqueID());
 			}
 			Value elementValue = arrayObj.aget((LiteralValue)index);
 			this.writeRegister(left.getContent(), elementValue);
@@ -290,8 +284,7 @@ public class MethodContext {
 			Value index = this.getRegister(indexRegName).getValue();
 			if (!(index instanceof LiteralValue))
 			{
-				System.out.println("aput index is not LiteralValue at " + s.getUniqueID());
-				System.exit(1);
+				Thrower.throwException("aput index is not LiteralValue at " + s.getUniqueID());
 			}
 			Value toPut = this.getRegister(left.getContent()).getValue();
 			arrayObj.aput((LiteralValue)index, toPut);
@@ -320,8 +313,7 @@ public class MethodContext {
 						Value v = this.getRegister(regName).getValue();
 						if (!(v instanceof LiteralValue))
 						{
-							System.out.println("Arithmatical Operation reads non Literal Value at " + s.getUniqueID());
-							System.exit(1);
+							Thrower.throwException("Arithmatical Operation reads non Literal Value at " + s.getUniqueID());
 						}
 						result.add(v.getExpression().clone());
 					}
@@ -343,19 +335,17 @@ public class MethodContext {
 		Value arrayRef = this.getRegister(arrayRegName).getValue();
 		if (!(arrayRef instanceof ReferenceValue))
 		{
-			System.out.println("array-length got non-Reference value array at " + s.getUniqueID());
-			System.exit(1);
+			Thrower.throwException("array-length got non-Reference value array at " + s.getUniqueID());
 		}
 		SymbolicObject arrayObj = this.vm.getObject(arrayRef.getExpression().getContent());
 		if (!(arrayObj instanceof SymbolicArray))
 		{
-			System.out.println("array-length got non-SymbolicArray object array at " + s.getUniqueID());
-			System.exit(1);
+			Thrower.throwException("array-length got non-SymbolicArray object array at " + s.getUniqueID());
 		}
 		return (SymbolicArray)arrayObj;
 	}
 	
-	public void solveInvokeStatement(StaticStmt s)
+	public void modelInvokeStatement(StaticStmt s)
 	{
 		if (!s.isInvokeStmt())
 			return;
@@ -363,7 +353,7 @@ public class MethodContext {
 		StaticMethod targetM = this.vm.staticApp.getMethod(invokeSig);
 		if (targetM != null && !SymbolicExecutionBlacklist.classInBlackList(targetM.getDeclaringClass().getDexName()))
 			return;
-		if (Controller.tryAllSolvers(vm, this, s))
+		if (Controller.tryAllModelers(vm, this, s))
 		{}
 		else if (!invokeSig.endsWith(")V"))
 		{

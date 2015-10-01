@@ -1,4 +1,4 @@
-package apex.symbolic.object.solver;
+package apex.symbolic.object.model;
 
 import apex.staticFamily.StaticStmt;
 import apex.symbolic.Expression;
@@ -9,7 +9,7 @@ import apex.symbolic.object.SymbolicObject;
 import apex.symbolic.value.LiteralValue;
 import apex.symbolic.value.ReferenceValue;
 
-public class NumberConversionSolver {
+public class NumberConversionAPIModel {
 
 	
 	private static String[] signatures = {
@@ -22,7 +22,7 @@ public class NumberConversionSolver {
 		"Ljava/lang/Double;->valueOf(D)Ljava/lang/Double;",	//static
 	};
 	
-	public static boolean solvable(String invokeSig)
+	public static boolean canHandle(String invokeSig)
 	{
 		for (String sig : signatures)
 		{
@@ -44,7 +44,7 @@ public class NumberConversionSolver {
 	}
 	
 	
-	public static void solve(VMContext vm, MethodContext mc, StaticStmt s)
+	public static void apply(VMContext vm, MethodContext mc, StaticStmt s)
 	{
 		String invokeSig = s.getInvokeSignature();
 		int index = getSignatureIndex(invokeSig);

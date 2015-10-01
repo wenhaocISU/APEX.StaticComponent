@@ -6,6 +6,7 @@ import java.util.List;
 
 import apex.staticFamily.StaticStmt;
 import apex.symbolic.Expression;
+import apex.symbolic.value.Thrower;
 
 public class DEXParser {
 	public static String[] smaliStatements = {
@@ -585,8 +586,7 @@ public class DEXParser {
 			if (!nextS.getBytecodeOperator().startsWith("if")
 					|| !nextS.getBytecodeOperator().endsWith("z"))
 			{
-				System.out.println("cmp stmt not followed by ifz stmt!!!");
-				System.exit(1);
+				Thrower.throwException("cmp stmt not followed by ifz stmt!!!");
 			}
 			ex = new Expression("");
 		}
