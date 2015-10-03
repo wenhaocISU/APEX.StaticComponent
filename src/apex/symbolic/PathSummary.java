@@ -56,6 +56,22 @@ public class PathSummary {
 		return this.executionLog;
 	}
 	
+	public ArrayList<String> getBranchExecutionLog()
+	{
+		ArrayList<String> result = new ArrayList<String>();
+		for (int i = 0; i < this.executionLog.size(); i++)
+		{
+			String log = this.executionLog.get(i);
+			if (log.contains(",jump")
+					|| log.contains(",flow")
+					|| log.contains(",case"))
+			{
+				result.add(log);
+			}
+		}
+		return result;
+	}
+	
 	public ArrayList<Expression> getPathConditions()
 	{
 		return this.pathCondition;
