@@ -128,13 +128,22 @@ public class PathSummary {
 	{
 		SymbolicExecution sex = new SymbolicExecution(this.vm.getStaticApp());
 		ArrayList<String> fullExecLog = sex.expandLogcatOutput(logcatOutput).execLog;
-		if (fullExecLog.size() != logcatOutput.size())
+		for (String s : fullExecLog)
+		{
+			System.out.println(s);
+		}
+		System.out.println("------------------------------");
+		for (String s : this.executionLog)
+		{
+			System.out.println(s);
+		}
+		if (fullExecLog.size() != this.executionLog.size())
 		{
 			return false;
 		}
 		for (int i = 0; i < fullExecLog.size(); i++)
 		{
-			if (!fullExecLog.get(i).equals(logcatOutput))
+			if (!fullExecLog.get(i).equals(this.executionLog.get(i)))
 				return false;
 		}
 		return true;
@@ -142,7 +151,6 @@ public class PathSummary {
 	
 	public ArrayList<Expression> getSymbolicStates()
 	{
-		this.printVMContext();
 		if (this.symbolicStates == null)
 		{
 			this.symbolicStates = new ArrayList<Expression>();
@@ -245,11 +253,26 @@ public class PathSummary {
 				System.out.println(" " + id + " " + stmt.getSmaliStmt());
 		}
 		System.out.println("Symbolic States:");
-		for (Expression ex : this.getSymbolicStates())
-			System.out.println(" " + ex.toYicesStatement());
+		ArrayList<Expression> states = this.getSymbolicStates();
+		if (!states.isEmpty())
+		{
+			for (Expression ex : this.getSymbolicStates())
+				System.out.println(" " + ex.toYicesStatement());
+		}
+		else
+		{
+			System.out.println(" <empty>");
+		}
 		System.out.println("Path Conditions:");
-		for (Expression cond : this.pathCondition)
-			System.out.println(" " + cond.toYicesStatement());
+		if (!this.pathCondition.isEmpty())
+		{
+			for (Expression cond : this.pathCondition)
+				System.out.println(" " + cond.toYicesStatement());
+		}
+		else
+		{
+			System.out.println(" <empty>");
+		}
 		System.out.println("\n");
 	}
 }

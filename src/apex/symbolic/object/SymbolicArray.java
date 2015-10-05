@@ -33,6 +33,11 @@ public class SymbolicArray extends SymbolicObject{
 		this.expression = this.initArrayEx.clone();
 		if (initialArrayEx.getContent().equals("$array"))
 		{
+			String lengthStr = initialArrayEx.getChild(0).getContent();
+			if (lengthStr.equals("$number"))
+			{
+				lengthStr = initialArrayEx.getChild(0).getChild(0).getContent();
+			}
 			this.length = Integer.parseInt(initialArrayEx.getChild(0).getContent());
 			this.elementType = initialArrayEx.getChild(1).getContent();
 		}

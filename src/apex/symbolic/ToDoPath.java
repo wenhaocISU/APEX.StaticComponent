@@ -5,6 +5,7 @@ import java.util.Map;
 import java.util.Stack;
 
 import apex.staticFamily.StaticApp;
+import apex.staticFamily.StaticClass;
 import apex.staticFamily.StaticMethod;
 import apex.staticFamily.StaticStmt;
 import apex.symbolic.value.Thrower;
@@ -158,11 +159,15 @@ public class ToDoPath {
 			else if (s.isInvokeStmt())
 			{
 				String targetSig = s.getInvokeSignature();
-				StaticMethod targetM = staticApp.getMethod(targetSig);
-				if (targetM != null && !targetM.isAbstract())
+				String className = targetSig.split("->")[0];
+				if (!SymbolicExecutionBlacklist.classInBlackList(className))
 				{
-					methods.push(targetM);
-					stmtIDs.push(0);
+					StaticMethod targetM = staticApp.getMethod(targetSig);
+					if (targetM != null && !targetM.isAbstract())
+					{
+						methods.push(targetM);
+						stmtIDs.push(0);
+					}
 				}
 			}
 		}

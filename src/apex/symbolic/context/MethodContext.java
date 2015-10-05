@@ -231,16 +231,25 @@ public class MethodContext {
 			//first initiate the array with length and type
 			String arrayType = "[" + right.getChild(1).getContent();
 			Expression arrayEx = new Expression("$array");
-			arrayEx.add(right.getChild(0).clone());
+			String length = right.getChild(0).getContent();
+			if (length.startsWith("v") || length.startsWith("p"))
+			{
+				Expression realLengthEx = this.getRegister(length).getValue().getExpression();
+				arrayEx.add(realLengthEx.clone());
+			}
+			else
+			{
+				arrayEx.add(right.getChild(0).clone());
+			}
 			arrayEx.add(right.getChild(1).clone());
-			String address = this.vm.createObject(right.clone(), arrayType, false);
+			String address = this.vm.createObject(arrayEx, arrayType, false);
 			ReferenceValue v = new ReferenceValue(new Expression(address), arrayType);
 			this.writeRegister(left.getContent(), v);
 			// then put each element in (if there are any)
 			SymbolicArray arrayObj = (SymbolicArray) this.vm.getObject(address);
-			for (int i = 2; i < arrayEx.getChildCount(); i++)
+			for (int i = 2; i < right.getChildCount(); i++)
 			{
-				Expression elementEx = arrayEx.getChild(i);
+				Expression elementEx = right.getChild(i);
 				int index = Integer.parseInt(elementEx.getChild(0).getContent());
 				LiteralValue indexV = new LiteralValue(new Expression(index+""), "I");
 				Expression valueEx = elementEx.getChild(1);
