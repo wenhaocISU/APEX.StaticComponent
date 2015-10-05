@@ -248,9 +248,8 @@ public class PathSummary {
 			StaticStmt stmt = this.vm.getStaticApp().getStmt(stmtInfo);
 			String id = stmtInfo.substring(stmtInfo.indexOf(":")+1);
 			if (stmt.isFirstStmtOfMethod())
-				System.out.println(stmt.getContainingMethod().getDeclaration() + "\n " + id + " " + stmt.getSmaliStmt());
-			else
-				System.out.println(" " + id + " " + stmt.getSmaliStmt());
+				System.out.println(stmt.getContainingMethod().getDeclaration());
+			System.out.println(" " + id + "\t" + stmt.getSmaliStmt());
 		}
 		System.out.println("Symbolic States:");
 		ArrayList<Expression> states = this.getSymbolicStates();
