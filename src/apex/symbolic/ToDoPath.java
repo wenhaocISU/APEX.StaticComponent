@@ -128,6 +128,8 @@ public class ToDoPath {
 					Thrower.throwException("ToDoPath.generateExecLogFromOrders() failed to find an order.");
 				}
 				this.branchChoices.add(s.getUniqueID()+","+choice);
+				this.execLog.remove(this.execLog.size()-1);
+				this.execLog.add(s.getUniqueID()+","+choice);
 			}
 			else if (s.isSwitchStmt())
 			{
@@ -148,6 +150,8 @@ public class ToDoPath {
 					Thrower.throwException("ToDoPath.generateExecLogFromOrders() failed to find an order.");
 				}
 				this.branchChoices.add(s.getUniqueID() + "," + choice);
+				this.execLog.remove(this.execLog.size()-1);
+				this.execLog.add(s.getUniqueID()+","+choice);
 			}
 			else if (s.isGotoStmt())
 			{
