@@ -5,7 +5,6 @@ import java.util.Map;
 import java.util.Stack;
 
 import apex.staticFamily.StaticApp;
-import apex.staticFamily.StaticClass;
 import apex.staticFamily.StaticMethod;
 import apex.staticFamily.StaticStmt;
 import apex.symbolic.value.Thrower;
@@ -76,6 +75,10 @@ public class ToDoPath {
 		return this.id;
 	}
 	
+	public ArrayList<String> getExecutionLog()
+	{
+		return this.execLog;
+	}
 	
 	public void generateExecLogFromOrders(StaticApp staticApp)
 	{
