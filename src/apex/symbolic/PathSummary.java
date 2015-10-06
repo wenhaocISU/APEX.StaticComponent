@@ -72,6 +72,11 @@ public class PathSummary {
 		return result;
 	}
 	
+	public String getMethodSignature()
+	{
+		return this.methodSignature;
+	}
+	
 	public ArrayList<Expression> getPathConditions()
 	{
 		return this.pathCondition;
