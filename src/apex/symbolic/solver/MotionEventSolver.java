@@ -1,6 +1,6 @@
-package apex.symbolic.object.model;
+package apex.symbolic.solver;
 
-public class MotionEventModel {
+public class MotionEventSolver {
 
 
 	/**

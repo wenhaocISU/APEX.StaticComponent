@@ -41,7 +41,6 @@ public class PathSummary {
 		this.executionLog = new ArrayList<String>(execLog);
 	}
 	
-	
 	void setPathCondition(ArrayList<Expression> pathConditions)
 	{
 		this.pathCondition = new ArrayList<Expression>();
