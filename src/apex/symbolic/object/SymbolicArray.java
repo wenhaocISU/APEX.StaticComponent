@@ -109,7 +109,8 @@ public class SymbolicArray extends SymbolicObject{
 	{
 		String operator = this.initArrayEx.getContent().equals("$array")? "" : "$aget";
 		// if aput history are all constant index, then try to find
-		// the result from there
+		// the result from there.
+		// (if any of the aput history index is not number, exception will be caught)
 		try
 		{
 			Value result = null;
@@ -122,22 +123,22 @@ public class SymbolicArray extends SymbolicObject{
 					result = aput.value.clone();
 				}
 			}
-			return result;
+			if (result != null)
+				return result;
 		}
 		catch (NumberFormatException e)
+		{}
+		// otherwise let yices solve it
+		Expression resultEx = new Expression(operator);
+		resultEx.add(this.getArrayExpression().clone());
+		resultEx.add(indexV.getExpression().clone());
+		if (DEXParser.isPrimitiveType(this.elementType) || this.elementType.equals("Ljava/lang/String;"))
 		{
-			// otherwise let yices solve it
-			Expression resultEx = new Expression(operator);
-			resultEx.add(this.getArrayExpression().clone());
-			resultEx.add(indexV.getExpression().clone());
-			if (DEXParser.isPrimitiveType(this.elementType) || this.elementType.equals("Ljava/lang/String;"))
-			{
-				return new LiteralValue(resultEx, this.elementType);
-			}
-			else
-			{
-				return new ReferenceValue(resultEx, this.elementType);
-			}
+			return new LiteralValue(resultEx, this.elementType);
+		}
+		else
+		{
+			return new ReferenceValue(resultEx, this.elementType);
 		}
 	}
 	
