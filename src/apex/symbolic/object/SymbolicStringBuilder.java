@@ -8,6 +8,10 @@ public class SymbolicStringBuilder extends SymbolicObject{
 
 	
 	private Expression stringEx;
+
+	
+	SymbolicStringBuilder()
+	{};
 	
 	public SymbolicStringBuilder(int birthday, Expression ex)
 	{
@@ -42,6 +46,17 @@ public class SymbolicStringBuilder extends SymbolicObject{
 	public Expression toStringExpression()
 	{
 		return this.stringEx.clone();
+	}
+	
+	public SymbolicStringBuilder clone()
+	{
+		SymbolicStringBuilder result = new SymbolicStringBuilder();
+		result.address = this.address;
+		if (this.expression != null)
+			result.expression = this.expression.clone();
+		if (this.stringEx != null)
+			result.stringEx = this.stringEx.clone();
+		return result;
 	}
 
 }

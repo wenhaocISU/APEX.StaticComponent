@@ -25,6 +25,11 @@ public class SymbolicArray extends SymbolicObject{
 	private ArrayList<Aput> aputHistory = new ArrayList<Aput>();
 	private Expression initArrayEx;
 	
+	
+	SymbolicArray()
+	{
+	}
+	
 	public SymbolicArray(int birthday, Expression initialArrayEx)
 	{
 		super(birthday);
@@ -142,7 +147,23 @@ public class SymbolicArray extends SymbolicObject{
 		}
 	}
 	
-	
+	public SymbolicArray clone()
+	{
+		SymbolicArray result = new SymbolicArray();
+		result.address = this.address;
+		if (this.expression != null)
+			result.expression = this.expression.clone();
+		result.length = this.length;
+		result.elementType = this.elementType;
+		result.aputHistory = new ArrayList<Aput>();
+		for (Aput aput : this.aputHistory)
+		{
+			result.aputHistory.add(aput.clone());
+		}
+		if (this.initArrayEx != null)
+			result.initArrayEx = this.initArrayEx.clone();
+		return result;
+	}
 	
 	private class Aput
 	{
@@ -152,6 +173,10 @@ public class SymbolicArray extends SymbolicObject{
 		{
 			this.index = index;
 			this.value = value;
+		}
+		protected Aput clone()
+		{
+			return new Aput(this.index.clone(), this.value.clone());
 		}
 	}
 	

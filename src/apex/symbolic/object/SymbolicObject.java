@@ -14,7 +14,7 @@ public class SymbolicObject{
 	
 
 	
-	private SymbolicObject()
+	SymbolicObject()
 	{}
 	
 	public SymbolicObject(int birthday)
@@ -56,14 +56,25 @@ public class SymbolicObject{
 	
 	public SymbolicObject clone()
 	{
-		SymbolicObject result = new SymbolicObject();
-		result.address = this.address;
-		result.expression = this.expression==null?null:this.expression.clone();
-		for (Map.Entry<String, Value> entry : this.members.entrySet())
+/*		if (this instanceof SymbolicArray)
 		{
-			result.members.put(entry.getKey(), entry.getValue().clone());
+			return ((SymbolicArray)this).clone();
 		}
-		return result;
+		else if (this instanceof SymbolicStringBuilder)
+		{
+			return ((SymbolicStringBuilder)this).clone();
+		}
+		else*/
+		{
+			SymbolicObject result = new SymbolicObject();
+			result.address = this.address;
+			result.expression = this.expression==null?null:this.expression.clone();
+			for (Map.Entry<String, Value> entry : this.members.entrySet())
+			{
+				result.members.put(entry.getKey(), entry.getValue().clone());
+			}
+			return result;
+		}
 	}
 	
 	public void print()
