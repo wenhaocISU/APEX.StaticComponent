@@ -128,7 +128,7 @@ public class SymbolicArray extends SymbolicObject{
 		}
 		catch (NumberFormatException e)
 		{}
-		// otherwise let yices solve it
+		// otherwise leave it to yices
 		Expression resultEx = new Expression(operator);
 		resultEx.add(this.getArrayExpression().clone());
 		resultEx.add(indexV.getExpression().clone());
