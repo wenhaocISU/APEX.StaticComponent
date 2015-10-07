@@ -13,6 +13,7 @@ public class SymbolicStringBuilder extends SymbolicObject{
 	SymbolicStringBuilder()
 	{};
 	
+	
 	public SymbolicStringBuilder(int birthday, Expression ex)
 	{
 		super(birthday, ex);
@@ -40,7 +41,6 @@ public class SymbolicStringBuilder extends SymbolicObject{
 			this.stringEx.add(toAppend.getExpression());
 		}
 		return new ReferenceValue(new Expression(this.address), "Ljava/lang/StringBuilder;");
-
 	}
 	
 	public Expression toStringExpression()
@@ -57,6 +57,13 @@ public class SymbolicStringBuilder extends SymbolicObject{
 		if (this.stringEx != null)
 			result.stringEx = this.stringEx.clone();
 		return result;
+	}
+
+	public void print()
+	{
+		System.out.println("\n[" + this.address + "] *SymbolicStringBuilder");
+		if (this.stringEx != null)
+			System.out.println(" *string expression: " + this.stringEx.toYicesStatement());
 	}
 
 }

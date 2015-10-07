@@ -46,10 +46,10 @@ public class ReferenceValue implements Value {
 	public void print()
 	{
 		if (expression != null)
-			System.out.println("     *ref value: " + expression.toYicesStatement());
+			System.out.println("  *ref value: " + expression.toYicesStatement());
 		else
-			System.out.println("     *ref value: null");
-		System.out.println("     *type: " + type);
+			System.out.println("  *ref value: null");
+		System.out.println("  *type: " + type);
 	}
 
 	@Override 
@@ -57,10 +57,10 @@ public class ReferenceValue implements Value {
 	{
 		String result = "";
 		if (expression != null)
-			result+=("     *ref value: [" + expression.toYicesStatement()+"]\n");
+			result+=("  *ref value: [" + expression.toYicesStatement()+"]\n");
 		else
-			result+=("     *ref value: null\n");
-		result+=("     *type: " + type);
+			result+=("  *ref value: null\n");
+		result+=("  *type: " + type);
 		return result;
 	}
 	

@@ -20,7 +20,7 @@ public class SymbolicArray extends SymbolicObject{
 	 * 
 	 * */
 	
-	private int length;
+	private int length = -1;
 	private String elementType;
 	private ArrayList<Aput> aputHistory = new ArrayList<Aput>();
 	private Expression initArrayEx;
@@ -178,6 +178,17 @@ public class SymbolicArray extends SymbolicObject{
 		{
 			return new Aput(this.index.clone(), this.value.clone());
 		}
+	}
+	
+	public void print()
+	{
+		System.out.println("\n[" + this.address + "] *SymbolicArray");
+		if (this.expression != null)
+		{
+			System.out.println(" *array expression: " + this.expression.toYicesStatement());
+		}
+		System.out.println(" *length = " + (this.length==-1?"unknown":this.length));
+		System.out.println(" *element type = " + this.elementType);
 	}
 	
 }

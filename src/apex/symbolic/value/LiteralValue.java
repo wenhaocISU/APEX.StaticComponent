@@ -41,10 +41,10 @@ public class LiteralValue implements Value{
 	public void print()
 	{
 		if (expression != null)
-			System.out.println("     *literal value: " + expression.toYicesStatement());
+			System.out.println("  *literal value: " + expression.toYicesStatement());
 		else
-			System.out.println("     *literal value: null");
-		System.out.println("     *type: " + type);
+			System.out.println("  *literal value: null");
+		System.out.println("  *type: " + type);
 	}
 	
 	@Override 
@@ -52,10 +52,10 @@ public class LiteralValue implements Value{
 	{
 		String result = "";
 		if (expression != null)
-			result+=("     *literal value: " + expression.toYicesStatement()+"\n");
+			result+=("  *literal value: " + expression.toYicesStatement()+"\n");
 		else
-			result+=("     *literal value: null\n");
-		result+=("     *type: " + type);
+			result+=("  *literal value: null\n");
+		result+=("  *type: " + type);
 		return result;
 	}
 

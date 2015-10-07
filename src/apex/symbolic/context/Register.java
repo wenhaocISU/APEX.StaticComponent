@@ -46,9 +46,9 @@ public class Register {
 	{
 		System.out.println(" reg " + name);
 		if (isParameter)
-			System.out.println(" *parameter");
+			System.out.println("  *parameter");
 		if (isLocked)
-			System.out.println(" *locked");
+			System.out.println("  *locked");
 		if (this.value != null)
 			this.value.print();
 	}

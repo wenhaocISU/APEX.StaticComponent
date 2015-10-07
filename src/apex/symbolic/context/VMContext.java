@@ -402,10 +402,10 @@ public class VMContext {
 	public void printSnapshot()
 	{
 		System.out.println("---------------VM Snapshot---------------");
-		System.out.println("=== method contexts");
+		System.out.println("<method contexts>");
 		for (MethodContext mc : methods)
 			mc.printSnapshot();
-		System.out.println("=== objects");
+		System.out.println("\n<objects>");
 		for (SymbolicObject obj : objects)
 			obj.print();
 		System.out.println("-----------End of VM Snapshot------------");
