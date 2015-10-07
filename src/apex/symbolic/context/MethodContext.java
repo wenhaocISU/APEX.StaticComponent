@@ -344,12 +344,12 @@ public class MethodContext {
 		Value arrayRef = this.getRegister(arrayRegName).getValue();
 		if (!(arrayRef instanceof ReferenceValue))
 		{
-			Thrower.throwException("array-length got non-Reference value array at " + s.getUniqueID());
+			Thrower.throwException("array-length got non-Reference value array at " + s.getUniqueID(), this.vm);
 		}
 		SymbolicObject arrayObj = this.vm.getObject(arrayRef.getExpression().getContent());
 		if (!(arrayObj instanceof SymbolicArray))
 		{
-			Thrower.throwException("array-length got non-SymbolicArray object array at " + s.getUniqueID());
+			Thrower.throwException("array-length got non-SymbolicArray object array at " + s.getUniqueID(), this.vm);
 		}
 		return (SymbolicArray)arrayObj;
 	}
