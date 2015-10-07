@@ -107,6 +107,7 @@ public class SymbolicArray extends SymbolicObject{
 	
 	public Value aget(LiteralValue indexV)
 	{
+		String operator = this.initArrayEx.getContent().equals("$array")? "" : "$aget";
 		// if aput history are all constant index, then try to find
 		// the result from there
 		try
@@ -126,8 +127,8 @@ public class SymbolicArray extends SymbolicObject{
 		catch (NumberFormatException e)
 		{
 			// otherwise let yices solve it
-			Expression resultEx = new Expression("");
-			resultEx.add(this.getArrayExpression());
+			Expression resultEx = new Expression(operator);
+			resultEx.add(this.getArrayExpression().clone());
 			resultEx.add(indexV.getExpression().clone());
 			if (DEXParser.isPrimitiveType(this.elementType) || this.elementType.equals("Ljava/lang/String;"))
 			{
