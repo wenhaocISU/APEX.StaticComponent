@@ -154,7 +154,7 @@ public class Instrumentor {
 		"Landroid/support/v7/internal/widget/ListPopupWindow;->buildDropDown()I",
 		"Landroid/support/v7/internal/widget/ScrollingTabContainerView$TabView;->update()V"
 	};
-	 * */
+	**/
 	private ArrayList<String> generatePrintLnStmts(StaticApp staticApp, StaticStmt s, String text)
 	{
 		ArrayList<String> result = new ArrayList<String>();
