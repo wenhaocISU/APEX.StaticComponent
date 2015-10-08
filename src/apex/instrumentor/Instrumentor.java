@@ -6,6 +6,7 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.PrintWriter;
 import java.util.ArrayList;
+import java.util.Arrays;
 
 import apex.staticFamily.StaticApp;
 import apex.staticFamily.StaticField;
@@ -87,10 +88,10 @@ public class Instrumentor {
 			addPrintLnBefore(staticApp, s, "execLog," + s.getUniqueID() + ",block" + s.getBlockName());
 		}
 		
-		// Job 4
+		// Job 4 - disabled for now
 		if (s.isInTryBlock())
 		{
-			addPrintLnBefore(staticApp, s, "execLog," + s.getUniqueID() + ",try");
+			//addPrintLnBefore(staticApp, s, "execLog," + s.getUniqueID() + ",try");
 		}
 		
 		// Job 5,6
@@ -102,6 +103,7 @@ public class Instrumentor {
 		{
 			addPrintLnBeforeAndAfter(staticApp, s, "execLog," + s.getUniqueID() + ",switch", "execLog," + s.getUniqueID() + ",flow_through");
 		}
+		
 		// Job 7,8
 		if (s.isReturnStmt())
 		{
@@ -134,7 +136,7 @@ public class Instrumentor {
 	{
 		String regInfo = s.getContainingMethod().findUsableRegister(staticApp, s);
 		ArrayList<String> printlnStmts = generatePrintLnStmts(staticApp, s, text, regInfo);
-		if (s.getBytecodeOperator().startsWith("move-result"))
+		if (s.getBytecodeOperator().startsWith("move-result"))	// move-result and method invocation must not be separated
 		{
 			for (String stmt : printlnStmts)
 			{

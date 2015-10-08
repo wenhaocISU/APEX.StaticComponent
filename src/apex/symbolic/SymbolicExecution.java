@@ -237,6 +237,11 @@ public class SymbolicExecution {
 	
 	public ArrayList<ToDoPath> generateToDoPaths(StaticMethod m, int startingStmtID, int endingStmtID)
 	{
+		return this.generateToDoPaths(m, startingStmtID, endingStmtID, true);
+	}
+	
+	public ArrayList<ToDoPath> generateToDoPaths(StaticMethod m, int startingStmtID, int endingStmtID, boolean invokeMethods)
+	{
 		ArrayList<ToDoPath> result = new ArrayList<ToDoPath>();
 		ArrayList<ToDoPath> unfinished = new ArrayList<ToDoPath>();
 		ToDoPath tdP = new ToDoPath(startingStmtID, endingStmtID);
@@ -244,7 +249,7 @@ public class SymbolicExecution {
 		while (unfinished.size() > 0)
 		{
 			ToDoPath p = unfinished.remove(unfinished.size()-1);
-			ArrayList<ToDoPath> finishedTDPs = exploreTDP(unfinished, p, m, true);
+			ArrayList<ToDoPath> finishedTDPs = exploreTDP(unfinished, p, m, true, invokeMethods);
 			if (p.isLegit)
 				result.addAll(finishedTDPs);
 		}
@@ -252,6 +257,8 @@ public class SymbolicExecution {
 		return result;
 	}
 	
+	
+/*	
 	private ArrayList<ToDoPath> generateToDoPaths(StaticMethod m, int startingStmtID, int endingStmtID, boolean print)
 	{
 		ArrayList<ToDoPath> result = new ArrayList<ToDoPath>();
@@ -270,10 +277,10 @@ public class SymbolicExecution {
 		}
 		result = removeDupe(result);
 		return result;
-	}
+	}*/
 	
 	
-	private ArrayList<ToDoPath> exploreTDP(ArrayList<ToDoPath> tdPList, ToDoPath p, StaticMethod m, boolean addToDoList)
+	private ArrayList<ToDoPath> exploreTDP(ArrayList<ToDoPath> tdPList, ToDoPath p, StaticMethod m, boolean addToDoList, boolean invokeMethods)
 	{
 		ArrayList<ToDoPath> result = new ArrayList<ToDoPath>();
 		result.add(p.clone());
@@ -380,7 +387,7 @@ public class SymbolicExecution {
 				}
 				break;
 			}
-			else if (s.isInvokeStmt())
+			else if (s.isInvokeStmt() && invokeMethods)
 			{
 				//TODO deal with inheritance sometime
 				// can use ranged symbolic execution to find out the type of p0
@@ -392,7 +399,7 @@ public class SymbolicExecution {
 					StaticMethod targetM = this.staticApp.getMethod(targetSig);
 					if (targetM != null && !targetM.isAbstract())
 					{
-						ArrayList<ToDoPath> invokedTDPs = this.generateToDoPaths(targetM, 0, -1, false);
+						ArrayList<ToDoPath> invokedTDPs = this.generateToDoPaths(targetM, 0, -1);
 						ArrayList<ToDoPath> newResult = new ArrayList<ToDoPath>();
 						for (ToDoPath tdP : result)
 						{
