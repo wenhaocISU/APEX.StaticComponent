@@ -59,6 +59,10 @@ public class SymbolicExecution {
 				String choice = stmtInfo.substring(stmtInfo.indexOf(",")+1);
 				stmtInfo = stmtInfo.substring(0, stmtInfo.indexOf(","));
 				StaticStmt s = staticApp.getStmt(stmtInfo);
+				if (this.printStmtInfo)
+				{
+					System.out.println(" " + s.getSmaliStmt());
+				}
 				if (s.isFirstStmtOfMethod())
 				{
 					MethodContext mc = new MethodContext(s.getContainingMethod(), vm);
@@ -90,6 +94,10 @@ public class SymbolicExecution {
 			else	// this statement might change registers or objects
 			{
 				StaticStmt s = staticApp.getStmt(stmtInfo);
+				if (this.printStmtInfo)
+				{
+					System.out.println(" " + s.getSmaliStmt());
+				}
 				vm.applyOperation(s);
 			}
 		}

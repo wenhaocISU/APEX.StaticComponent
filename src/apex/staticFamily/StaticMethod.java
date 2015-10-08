@@ -4,12 +4,14 @@ import java.util.ArrayList;
 import java.util.List;
 
 import apex.instrumentor.Instrumentor;
+import apex.parser.DEXParser;
 import apex.symbolic.PathSummary;
 import apex.symbolic.SymbolicExecution;
 import apex.symbolic.ToDoPath;
 import apex.symbolic.context.MethodContext;
 import apex.symbolic.context.Register;
 import apex.symbolic.context.VMContext;
+import apex.symbolic.value.Thrower;
 
 
 public class StaticMethod {
@@ -277,14 +279,14 @@ public class StaticMethod {
 			return "p1:" + this.paramTypes.get(1);
 		}
 		
-		// Now there are a lot of local registers, and 0 usable parameter registers
+		// Now there are a lot of local registers, and 0 or 1 parameter registers
 		
 		// Some corners to cut
 		if (s.getStatementID() == 0)
 		{
 			return "v0";
 		}
-		else if (s.isReturnStmt() || s.isThrowStmt())
+		if (s.isReturnStmt() || s.isThrowStmt())
 		{
 			for (int i = 0; i < this.localRegisterCount; i++)
 			{
@@ -312,14 +314,42 @@ public class StaticMethod {
 		for (ToDoPath p : tdP)
 		{
 			PathSummary ps = sex.doFullSymbolic(new VMContext(staticApp), p, this.getSignature(), -1);
-			MethodContext mc = ps.getVMContext().pop();
+			MethodContext mc = ps.getVMContext().getRecentMethodContext();
+			// find a register that is:
+			// 1. empty (preferrable)
+			// 2. holding a known typed value
+			String emptyReg = "", nonEmptyPrimitiveReg = "", nonEmptyReferenceReg = "";
 			for (Register reg : mc.getRegisters())
 			{
-				if (reg.getValue() != null && !reg.getValue().getType().equals("")
+				int regNumber = Integer.parseInt(reg.getName().substring(1));
+				if (reg.getName().startsWith("p") || regNumber > 15)
+					continue;
+				if (reg.getValue() == null)
+				{
+					emptyReg = reg.getName();
+				}
+				else if (reg.getValue() != null && !reg.getValue().getType().equals("")
 						&& !reg.getValue().getType().equals("const-class"))
 				{
-					return reg.getName()+":"+reg.getValue().getType();
+					if (DEXParser.isPrimitiveType(reg.getValue().getType()))
+						nonEmptyPrimitiveReg = reg.getName()+":"+reg.getValue().getType();
+					else
+						nonEmptyReferenceReg = reg.getName()+":"+reg.getValue().getType();
 				}
+			}
+			if (!emptyReg.equals(""))
+			{
+				return emptyReg;
+			}
+			else if (!nonEmptyPrimitiveReg.equals(""))
+			{
+				return nonEmptyPrimitiveReg;
+			}
+			else if (!nonEmptyReferenceReg.equals(""))
+				return nonEmptyReferenceReg;
+			else
+			{
+				Thrower.throwException("Can't find a usable register when instrumenting " + s.getUniqueID());
 			}
 		}
 		return "v0";

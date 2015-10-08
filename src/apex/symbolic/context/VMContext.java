@@ -25,12 +25,13 @@ public class VMContext {
 	
 	StaticApp staticApp;
 	
-	Stack<MethodContext> methods = new Stack<MethodContext>();
+	private Stack<MethodContext> methods = new Stack<MethodContext>();
 	private List<SymbolicObject> objects = new ArrayList<SymbolicObject>();
 	private boolean endsWithThrow = false;
 	Value methodReturnedValue;
 	ArrayList<String> invokeParams = new ArrayList<String>();
 	private int objID = 0;
+	MethodContext lastMethodContext;
 	
 	public VMContext(StaticApp staticApp)
 	{
@@ -49,7 +50,15 @@ public class VMContext {
 	
 	public MethodContext pop()
 	{
-		return this.methods.pop();
+		this.lastMethodContext = this.methods.pop();
+		return this.lastMethodContext;
+	}
+	
+	public MethodContext getRecentMethodContext()
+	{
+		if (!this.methods.isEmpty())
+			return this.methods.peek();
+		return this.lastMethodContext;
 	}
 	
 	public List<SymbolicObject> getSymbolicObjects()
@@ -339,12 +348,12 @@ public class VMContext {
 		if (s.isThrowStmt())
 		{
 			this.endsWithThrow = true;
-			this.methods.pop();
+			this.pop();
 		}
 		else if (s.isReturnStmt())
 		{
 			this.endsWithThrow = false;
-			MethodContext mc = this.methods.pop();
+			MethodContext mc = this.pop();
 			String returnedVariable = s.getReturnedVariable();
 			if (!returnedVariable.equals(""))
 			{

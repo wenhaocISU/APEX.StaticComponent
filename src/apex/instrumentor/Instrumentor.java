@@ -96,13 +96,11 @@ public class Instrumentor {
 		// Job 5,6
 		if (s.isIfStmt())
 		{
-			addPrintLnBefore(staticApp, s, "execLog," + s.getUniqueID() + ",if");
-			addPrintLnAfter(staticApp, s, "execLog," + s.getUniqueID() + ",flow_through");
+			addPrintLnBeforeAndAfter(staticApp, s, "execLog," + s.getUniqueID() + ",if", "execLog," + s.getUniqueID() + ",flow_through");
 		}
 		else if (s.isSwitchStmt())
 		{
-			addPrintLnBefore(staticApp, s, "execLog," + s.getUniqueID() + ",switch");
-			addPrintLnAfter(staticApp, s, "execLog," + s.getUniqueID() + ",flow_through");
+			addPrintLnBeforeAndAfter(staticApp, s, "execLog," + s.getUniqueID() + ",switch", "execLog," + s.getUniqueID() + ",flow_through");
 		}
 		// Job 7,8
 		if (s.isReturnStmt())
@@ -116,9 +114,26 @@ public class Instrumentor {
 
 	}
 	
+	// this will only be called for if and switch statements
+	private void addPrintLnBeforeAndAfter(StaticApp staticApp, StaticStmt s, String textBefore, String textAfter)
+	{
+		String regInfo = s.getContainingMethod().findUsableRegister(staticApp, s);
+		ArrayList<String> printlnStmtsBefore = generatePrintLnStmts(staticApp, s, textBefore, regInfo);
+		ArrayList<String> printlnStmtsAfter = generatePrintLnStmts(staticApp, s, textAfter, regInfo);
+		for (String stmt : printlnStmtsBefore)
+		{
+			s.addPrecedingStmt(stmt);
+		}
+		for (String stmt : printlnStmtsAfter)
+		{
+			s.addSucceedingStmt(stmt);
+		}
+	}
+	
 	private void addPrintLnBefore(StaticApp staticApp, StaticStmt s, String text)
 	{
-		ArrayList<String> printlnStmts = generatePrintLnStmts(staticApp, s, text);
+		String regInfo = s.getContainingMethod().findUsableRegister(staticApp, s);
+		ArrayList<String> printlnStmts = generatePrintLnStmts(staticApp, s, text, regInfo);
 		if (s.getBytecodeOperator().startsWith("move-result"))
 		{
 			for (String stmt : printlnStmts)
@@ -137,7 +152,8 @@ public class Instrumentor {
 	
 	private void addPrintLnAfter(StaticApp staticApp, StaticStmt s, String text)
 	{
-		ArrayList<String> printlnStmts = generatePrintLnStmts(staticApp, s, text);
+		String regInfo = s.getContainingMethod().findUsableRegister(staticApp, s);
+		ArrayList<String> printlnStmts = generatePrintLnStmts(staticApp, s, text, regInfo);
 		for (String stmt : printlnStmts)
 		{
 			s.addSucceedingStmt(stmt);
@@ -155,11 +171,9 @@ public class Instrumentor {
 		"Landroid/support/v7/internal/widget/ScrollingTabContainerView$TabView;->update()V"
 	};
 	**/
-	private ArrayList<String> generatePrintLnStmts(StaticApp staticApp, StaticStmt s, String text)
+	private ArrayList<String> generatePrintLnStmts(StaticApp staticApp, StaticStmt s, String text, String regInfo)
 	{
 		ArrayList<String> result = new ArrayList<String>();
-		StaticMethod m = s.getContainingMethod();
-		String regInfo = m.findUsableRegister(staticApp, s);
 		String regName = "", regType = "";
 		if (regInfo.contains(":"))
 		{
@@ -177,7 +191,7 @@ public class Instrumentor {
 			StaticField f = s.getContainingMethod().getDeclaringClass().getTempField(regType, true);
 			String sputOp = "s" + getFieldOpKeyword(regType);
 			String sputStmt = "    " + sputOp + " " + regName + ", " + f.getSignature();
-			String sgetStmt = "    " + sputStmt.replaceFirst("sput", "sget");
+			String sgetStmt = sputStmt.replaceFirst("sput", "sget");
 			result.add(sputStmt);
 			result.add(constStringStmt);
 			result.add(invokeStmt);
@@ -190,6 +204,7 @@ public class Instrumentor {
 		}
 		return result;
 	}
+	
 	
 	private String getFieldOpKeyword(String type)
 	{

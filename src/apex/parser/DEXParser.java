@@ -293,21 +293,23 @@ public class DEXParser {
 	{
 		switch (type)
 		{
-		case "V": return "void";
-		case "Z": return "boolean";
-		case "B": return "byte";
-		case "S": return "short";
-		case "C": return "char";
-		case "I": return "int";
-		case "J": return "long";
-		case "F": return "float";
-		case "D": return "double";
+		case "void":	return "V";
+		case "boolean":	return "B";
+		case "byte":	return "B";
+		case "short":	return "S";
+		case "char":	return "C";
+		case "int":		return "I";
+		case "long":	return "J";
+		case "float":	return "F";
+		case "double":	return "D";
 		}
-		if (type.startsWith("L") && type.endsWith(";"))
+		if (type.endsWith("[]")) // e.g. String[][]
 		{
-			return type.substring(1, type.length()-1).replace("/", ".");
+			String elementJavaType = type.substring(0, type.length()-2);
+			String elementDexType = javaToDexType(elementJavaType);
+			return "[" + elementDexType;
 		}
-		return type;
+		return "L" + type.replace(".", "/") + ";";
 	}
 	
 	
