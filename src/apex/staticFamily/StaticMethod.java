@@ -254,6 +254,10 @@ public class StaticMethod {
 
 	public String findUsableRegister(StaticApp staticApp, StaticStmt s)
 	{
+		if (s.getStatementID() == 42 && s.getSmaliStmt().equals("move-exception v7"))
+		{
+			System.out.println();
+		}
 		if (this.localRegisterCount < 0)
 			return "";
 		
@@ -272,11 +276,11 @@ public class StaticMethod {
 		// a parameter register we can use
 		if (this.isStatic() && this.paramTypes.size()>0)
 		{
-			return "p0:" + this.paramTypes.get(0);
+			//return "p0:" + this.paramTypes.get(0);
 		}
 		else if (!this.isStatic()&&this.paramTypes.size()>1)
 		{
-			return "p1:" + this.paramTypes.get(1);
+			//return "p1:" + this.paramTypes.get(1);
 		}
 		
 		// Now there are a lot of local registers, and 0 or 1 parameter registers
@@ -309,11 +313,13 @@ public class StaticMethod {
 		
 		// Now we can't use the registers from this statement,
 		// have to do a simple symbolic execution
+
 		SymbolicExecution sex = new SymbolicExecution(staticApp);
-		ArrayList<ToDoPath> tdP = sex.generateToDoPaths(this, 0, s.getStatementID());
+		//sex.printTDPSteps = true;
+		ArrayList<ToDoPath> tdP = sex.generateToDoPaths(this, 0, s.getStatementID(), false);
 		for (ToDoPath p : tdP)
 		{
-			PathSummary ps = sex.doFullSymbolic(new VMContext(staticApp), p, this.getSignature(), -1);
+			PathSummary ps = sex.doFullSymbolic(new VMContext(staticApp), p, this.getSignature(), -1, false);
 			MethodContext mc = ps.getVMContext().getRecentMethodContext();
 			// find a register that is:
 			// 1. empty (preferrable)
@@ -321,6 +327,8 @@ public class StaticMethod {
 			String emptyReg = "", nonEmptyPrimitiveReg = "", nonEmptyReferenceReg = "";
 			for (Register reg : mc.getRegisters())
 			{
+				if (reg.isLocked())
+					continue;
 				int regNumber = Integer.parseInt(reg.getName().substring(1));
 				if (reg.getName().startsWith("p") || regNumber > 15)
 					continue;

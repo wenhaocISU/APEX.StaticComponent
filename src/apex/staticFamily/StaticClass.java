@@ -113,7 +113,7 @@ public class StaticClass {
 				return f;
 		}
 		String fieldName = "APEX_tempField_" + this.tempFields.size();
-		String declaration = isStatic? ".field static ": ".field ";
+		String declaration = isStatic? ".field private static ": ".field private ";
 		declaration += fieldName + ":" + type;
 		ArrayList<String> declarations = new ArrayList<String>();
 		declarations.add(declaration);

@@ -58,7 +58,7 @@ public class NumberConversionAPIModel {
 			Register p0Reg = mc.getRegister(s.getInvokeParameters().get(0));
 			LiteralValue p0Value = (LiteralValue) p0Reg.getValue();
 			resultEx.add(p0Value.getExpression().clone());
-			String address = vm.createObject(resultEx, returnType, false);
+			String address = vm.createObject(resultEx, returnType);
 			ReferenceValue v = new ReferenceValue(new Expression(address), returnType);
 			mc.putResult(v);
 		}
@@ -78,7 +78,7 @@ public class NumberConversionAPIModel {
 			// no need to keep $api signature
 			Register p0Reg = mc.getRegister(s.getInvokeParameters().get(0));
 			LiteralValue p0Value = (LiteralValue) p0Reg.getValue();
-			String address = vm.createObject(p0Value.getExpression().clone(), returnType, false);
+			String address = vm.createObject(p0Value.getExpression().clone(), returnType);
 			ReferenceValue v = new ReferenceValue(new Expression(address), returnType);
 			mc.putResult(v);
 		}

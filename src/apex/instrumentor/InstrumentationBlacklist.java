@@ -24,7 +24,8 @@ public class InstrumentationBlacklist {
 	
 	
 	public static ArrayList<String> methods = new ArrayList<String>(Arrays.asList(
-			""
+			"Lnet/mandaria/tippytipperlibrary/services/TipCalculatorService;->calculateTip()V",
+			"Lnet/mandaria/tippytipperlibrary/services/TipCalculatorService;->splitBill(I)V"
 	));
 	
 	

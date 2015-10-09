@@ -5,12 +5,15 @@ import java.util.List;
 import java.util.Map;
 import java.util.Stack;
 
+import apex.parser.DEXParser;
 import apex.staticFamily.StaticApp;
 import apex.staticFamily.StaticClass;
 import apex.staticFamily.StaticMethod;
 import apex.staticFamily.StaticStmt;
 import apex.symbolic.context.MethodContext;
 import apex.symbolic.context.VMContext;
+import apex.symbolic.value.LiteralValue;
+import apex.symbolic.value.ReferenceValue;
 import apex.symbolic.value.Thrower;
 
 public class SymbolicExecution {
@@ -18,7 +21,7 @@ public class SymbolicExecution {
 	private StaticApp staticApp;
 	public boolean printStmtInfo = false;
 	public boolean printVMStatus = false;
-	public boolean TDPVerbose = false;
+	public boolean printTDPSteps = false;
 	
 	public SymbolicExecution(StaticApp staticApp)
 	{
@@ -38,12 +41,12 @@ public class SymbolicExecution {
 		{
 			VMContext vm = new VMContext(this.staticApp);
 			System.out.println("Symbolically executing: " + m.getSignature() + " #" + id);
-			result.add(this.doFullSymbolic(vm, p, m.getSignature(), id++));
+			result.add(this.doFullSymbolic(vm, p, m.getSignature(), id++, true));
 		}
 		return result;
 	}
 	
-	private void execute(PathSummary ps, ArrayList<String> execLog, VMContext vm)
+	private void execute(PathSummary ps, ArrayList<String> execLog, VMContext vm, boolean invokesMethod)
 	{
 		for (int index = 0; index < execLog.size(); index++)
 		{
@@ -91,22 +94,68 @@ public class SymbolicExecution {
 					}
 				}
 			}
-			else	// this statement might change registers or objects
+			else // this statement might change registers or objects
 			{
 				StaticStmt s = staticApp.getStmt(stmtInfo);
 				if (this.printStmtInfo)
 				{
 					System.out.println(" " + s.getSmaliStmt());
 				}
-				vm.applyOperation(s);
+				if (s.isInvokeStmt() && !invokesMethod)
+				{
+					if (s.isFirstStmtOfMethod())
+					{
+						MethodContext mc = new MethodContext(s.getContainingMethod(), vm);
+						vm.push(mc);
+					}
+					String invokeSig = s.getInvokeSignature();
+					String returnType = invokeSig.substring(invokeSig.lastIndexOf(")")+1);
+					if (!returnType.equals("V"))
+					{
+						if (DEXParser.isPrimitiveType(returnType))
+						{
+							Expression ex = new Expression("123");
+							LiteralValue v = new LiteralValue(ex, returnType);
+							vm.peek().putResult(v);
+						}
+						else if (returnType.equals("Ljava/lang/String;"))
+						{
+							Expression ex = new Expression("$const-string");
+							ex.add("this is a stub!");
+							LiteralValue v = new LiteralValue(ex, returnType);
+							vm.peek().putResult(v);
+						}
+						else if (returnType.startsWith("["))
+						{
+							Expression ex = new Expression("$array");
+							ex.add("1");
+							ex.add(returnType.substring(1));
+							String address = vm.createObject(ex, returnType);
+							ReferenceValue v = new ReferenceValue(new Expression(address), returnType);
+							vm.peek().putResult(v);
+						}
+						else
+						{
+							Expression ex = new Expression("$new-instance");
+							ex.add(returnType);
+							String address = vm.createObject(ex, returnType);
+							ReferenceValue v = new ReferenceValue(new Expression(address), returnType);
+							vm.peek().putResult(v);
+						}
+					}
+				}
+				else
+				{
+					vm.applyOperation(s);
+				}
 			}
 		}
 	}
 	
-	public PathSummary doFullSymbolic(VMContext vm, ToDoPath p, String methodSig, int id)
+	public PathSummary doFullSymbolic(VMContext vm, ToDoPath p, String methodSig, int id, boolean invokesMethod)
 	{
 		PathSummary ps = new PathSummary(vm, p, methodSig, id);
-		execute(ps, p.execLog, vm);
+		execute(ps, p.execLog, vm, invokesMethod);
 		return ps;
 	}
 	
@@ -114,7 +163,7 @@ public class SymbolicExecution {
 	{
 		PathSummary ps = new PathSummary(vm, p, methodSig, id);
 		ps.setPathCondition(pathConditions);
-		execute(ps, p.execLog, vm);
+		execute(ps, p.execLog, vm, true);
 		return ps;
 	}
 	
@@ -125,7 +174,7 @@ public class SymbolicExecution {
 		String methodSig = p.m.getSignature();
 		int id = 0;
 		PathSummary ps = new PathSummary(vm, p, methodSig, id);
-		execute(ps, p.execLog, vm);
+		execute(ps, p.execLog, vm, true);
 		return ps;
 	}
 	
@@ -292,7 +341,7 @@ public class SymbolicExecution {
 			{
 				Thrower.throwException("SymbolicExecution.exploreTDP() ran into null StaticStmt.");
 			}
-			if (this.TDPVerbose)
+			if (this.printTDPSteps)
 			{
 				System.out.println("[" + s.getUniqueID() + "]");
 			}

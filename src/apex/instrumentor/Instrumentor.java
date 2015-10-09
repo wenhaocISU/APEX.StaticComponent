@@ -190,14 +190,19 @@ public class Instrumentor {
 		String invokeStmt = "    invoke-static {" + regName + "}, Lapex/instrumented/Println;->print(Ljava/lang/String;)V";
 		if (!regType.equals(""))
 		{
+			boolean isStatic = s.getContainingMethod().isStatic();
 			StaticField f = s.getContainingMethod().getDeclaringClass().getTempField(regType, true);
-			String sputOp = "s" + getFieldOpKeyword(regType);
-			String sputStmt = "    " + sputOp + " " + regName + ", " + f.getSignature();
-			String sgetStmt = sputStmt.replaceFirst("sput", "sget");
-			result.add(sputStmt);
+			
+/*			String putOp = isStatic? "s" + getPutFieldOpKeyword(regType): "i" + getPutFieldOpKeyword(regType);
+			String putStmt = isStatic? "    " + putOp + " " + regName + ", " + f.getSignature()
+									  :"    " + putOp + " " + regName + ", p0, " + f.getSignature();*/
+			String putOp = "s" + getPutFieldOpKeyword(regType);
+			String putStmt = "    " + putOp + " " + regName + ", " + f.getSignature();
+			String getStmt = putStmt.replaceFirst("put", "get");
+			result.add(putStmt);
 			result.add(constStringStmt);
 			result.add(invokeStmt);
-			result.add(sgetStmt);
+			result.add(getStmt);
 		}
 		else
 		{
@@ -208,7 +213,7 @@ public class Instrumentor {
 	}
 	
 	
-	private String getFieldOpKeyword(String type)
+	private String getPutFieldOpKeyword(String type)
 	{
 		if (type.equals("I") || type.equals("F"))
 			return "put";

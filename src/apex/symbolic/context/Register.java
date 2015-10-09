@@ -28,6 +28,11 @@ public class Register {
 		return this.value;
 	}
 	
+	public boolean isLocked()
+	{
+		return this.isLocked;
+	}
+	
 	public String getName()
 	{
 		return this.name;

@@ -48,6 +48,16 @@ public class VMContext {
 		this.methods.push(mc);
 	}
 	
+	public boolean stackIsEmpty()
+	{
+		return this.methods.isEmpty();
+	}
+	
+	public MethodContext peek()
+	{
+		return this.methods.peek();
+	}
+	
 	public MethodContext pop()
 	{
 		this.lastMethodContext = this.methods.pop();
@@ -90,7 +100,8 @@ public class VMContext {
 	 * as: $this-Lcom/my/Class;. Returns the object's
 	 * address
 	 * */
-	public String createObject(Expression ex, String type, boolean createInstanceFields)
+	//public String createObject(Expression ex, String type, boolean createInstanceFields)
+	public String createObject(Expression ex, String type)
 	{
 		if (type.equals("Ljava/lang/StringBuilder;"))
 		{
@@ -106,7 +117,7 @@ public class VMContext {
 		}
 		SymbolicObject obj = new SymbolicObject(this.objID++, ex);
 		this.addObject(obj);
-		if (createInstanceFields)
+/*		if (createInstanceFields)
 		{
 			StaticClass c = this.staticApp.getClassByDexName(type);
 			if (c != null)
@@ -118,41 +129,39 @@ public class VMContext {
 					this.initializeField(obj, f);
 				}
 			}
-		}
+		}*/
 		return obj.getAddress();
 	}
 	
-	public String createNewInstance(Expression ex, String classDexName, boolean createInstanceFields)
+	//public String createNewInstance(Expression ex, String classDexName, boolean createInstanceFields)
+	public String createNewInstance(Expression ex, String classDexName)
 	{
 		Expression objEx = ex.clone();
 		objEx.add("#"+this.objID);
-		return this.createObject(objEx, classDexName, createInstanceFields);
+		return this.createObject(objEx, classDexName/*, createInstanceFields*/);
 	}
 	
 	public void initializeField(SymbolicObject obj, StaticField f)
 	{
-		Expression fieldEx = new Expression("$Finstance");
-		fieldEx.add(f.getSignature());
-		fieldEx.add(obj.getExpression());
-		if (DEXParser.isPrimitiveType(f.getType()) || f.getType().equals("Ljava/lang/String;"))
-		{
-			LiteralValue v = new LiteralValue(fieldEx, f.getType());
-			obj.putField(f.getSignature(), v);
-		}
-		else
-		{
-			String address = this.createObject(fieldEx, f.getType(), true);
-			ReferenceValue v = new ReferenceValue(new Expression(address), f.getType());
-			obj.putField(f.getSignature(), v);
-		}
+		this.initializeField(obj, f.getSignature());
 	}
 	
 	public void initializeField(SymbolicObject obj, String fieldSig)
 	{
+		String fieldName = fieldSig.substring(fieldSig.indexOf("->")+2, fieldSig.indexOf(":"));
+		String fieldType = fieldSig.substring(fieldSig.lastIndexOf(":")+1);
+		if (fieldName.startsWith("this$"))
+		{
+			// this field should point to the $this object
+			String address = this.createOrFindObjectThis(fieldType);
+			ReferenceValue v = new ReferenceValue(new Expression(address), fieldType);
+			obj.putField(fieldSig, v);
+			return;
+		}
 		Expression fieldEx = new Expression("$Finstance");
 		fieldEx.add(fieldSig);
 		fieldEx.add(obj.getExpression());
-		String fieldType = fieldSig.substring(fieldSig.lastIndexOf(":")+1);
+		
 		if (DEXParser.isPrimitiveType(fieldType) || fieldType.equals("Ljava/lang/String;"))
 		{
 			LiteralValue v = new LiteralValue(fieldEx, fieldType);
@@ -160,7 +169,7 @@ public class VMContext {
 		}
 		else
 		{
-			String address = this.createObject(fieldEx, fieldType, true);
+			String address = this.createObject(fieldEx, fieldType);
 			ReferenceValue v = new ReferenceValue(new Expression(address), fieldType);
 			obj.putField(fieldSig, v);
 		}
@@ -182,7 +191,7 @@ public class VMContext {
 		}
 		else
 		{
-			String address = this.createObject(fieldEx, fieldType, true);
+			String address = this.createObject(fieldEx, fieldType);
 			ReferenceValue v = new ReferenceValue(new Expression(address), fieldType);
 			obj.putField(fieldSig, v);
 		}
@@ -217,7 +226,7 @@ public class VMContext {
 		String address = this.getAddressOfObject(thisEx);
 		if (address.equals(""))
 		{
-			address = this.createObject(thisEx, classDexName, true);
+			address = this.createObject(thisEx, classDexName);
 		}
 		return address;
 	}
@@ -310,7 +319,7 @@ public class VMContext {
 		String address = this.getAddressOfObject(staticClassEx);
 		if (address.equals(""))
 		{
-			address = this.createObject(staticClassEx, className, false);
+			address = this.createObject(staticClassEx, className);
 		}
 		this.getObject(address).putField(fieldSig, value);
 	}
@@ -323,7 +332,7 @@ public class VMContext {
 		String address = this.getAddressOfObject(staticClassEx);
 		if (address.equals(""))
 		{
-			address = this.createObject(staticClassEx, className, false);
+			address = this.createObject(staticClassEx, className);
 		}
 		SymbolicObject obj = this.getObject(address);
 		Value result = obj.getField(fieldSig);

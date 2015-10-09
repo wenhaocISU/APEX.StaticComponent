@@ -57,7 +57,7 @@ public class MethodContext {
 					}
 					else
 					{
-						String address = vm.createObject(ex, paramType, true);
+						String address = vm.createObject(ex, paramType);
 						ReferenceValue v = new ReferenceValue(new Expression(address), paramType);
 						reg.assign(v);
 					}
@@ -117,7 +117,7 @@ public class MethodContext {
 			if (right.getContent().equals("$array"))
 			{
 				String arrayType = "[" + right.getChild(1).getContent();
-				String address = this.vm.createObject(right, arrayType, false);
+				String address = this.vm.createObject(right, arrayType);
 				ReferenceValue arrayRef = new ReferenceValue(new Expression(address), arrayType);
 				this.putResult(arrayRef.clone());
 			}
@@ -222,7 +222,7 @@ public class MethodContext {
 		else if (right.getContent().equals("$new-instance"))
 		{
 			String classDexName = right.getChild(0).getContent();
-			String address = vm.createNewInstance(right.clone(), classDexName, true);
+			String address = vm.createNewInstance(right.clone(), classDexName);
 			ReferenceValue v = new ReferenceValue(new Expression(address), classDexName);
 			this.writeRegister(left.getContent(), v);
 		}
@@ -242,7 +242,7 @@ public class MethodContext {
 				arrayEx.add(right.getChild(0).clone());
 			}
 			arrayEx.add(right.getChild(1).clone());
-			String address = this.vm.createObject(arrayEx, arrayType, false);
+			String address = this.vm.createObject(arrayEx, arrayType);
 			ReferenceValue v = new ReferenceValue(new Expression(address), arrayType);
 			this.writeRegister(left.getContent(), v);
 			// then put each element in (if there are any)
@@ -309,10 +309,6 @@ public class MethodContext {
 			}
 			else	// the rest has 3 op fields
 			{
-				if (s.getSmaliStmt().equals("div-double/2addr v0, v2"))
-				{
-					System.out.println();
-				}
 				Expression result = new Expression(right.getContent());
 				for (int i = 0; i < 2; i++)
 				{
@@ -402,7 +398,7 @@ public class MethodContext {
 				}
 				else
 				{
-					String address = this.vm.createObject(resultEx, returnType, !SymbolicExecutionBlacklist.classInBlackList(returnType));
+					String address = this.vm.createObject(resultEx, returnType);
 					ReferenceValue v = new ReferenceValue(new Expression(address), returnType);
 					this.putResult(v);
 				}

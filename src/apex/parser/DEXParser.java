@@ -8,6 +8,13 @@ import apex.staticFamily.StaticStmt;
 import apex.symbolic.Expression;
 import apex.symbolic.value.Thrower;
 
+
+
+
+
+
+
+
 public class DEXParser {
 	public static String[] smaliStatements = {
 		"nop",
@@ -336,6 +343,15 @@ public class DEXParser {
 			String vA = stmt.substring(stmt.indexOf(" ")+1);
 			ex.add(vA);
 			ex.add("$result");
+		}
+		/**	move-exception vA	*/
+		else if (stmtIndex == 13)
+		{
+			String vA = stmt.substring(stmt.indexOf(" ")+1);
+			Expression exex = new Expression("$new-instance");
+			exex.add("Ljava/lang/Exception;");
+			ex.add(vA);
+			ex.add(vA);
 		}
 		/**	const	
 		 * 	NOTE(09/21/2015): since bytecode is not type sensitive,
@@ -921,8 +937,8 @@ public class DEXParser {
 			read.add(vB);
 			write.add(vA);
 		}
-		/** move-result vA */
-		else if (stmtIndex >= 10 && stmtIndex <= 12)
+		/** move-result vA && move-exception vA */
+		else if (stmtIndex >= 10 && stmtIndex <= 13)
 		{
 			String vA = stmt.substring(stmt.indexOf(" ")+1);
 			read.add(vA);
