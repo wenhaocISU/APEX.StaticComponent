@@ -260,7 +260,7 @@ public class SymbolicExecution {
 				
 				else if (line.endsWith(",try"))
 				{
-					//TODO TBC
+					// TBC
 				}
 				else if (line.contains(",block:"))
 				{
@@ -289,7 +289,11 @@ public class SymbolicExecution {
 		return this.generateToDoPaths(m, startingStmtID, endingStmtID, true);
 	}
 	
-	public ArrayList<ToDoPath> generateToDoPaths(StaticMethod m, int startingStmtID, int endingStmtID, boolean invokeMethods)
+	public ArrayList<ToDoPath> generateToDoPaths(
+					StaticMethod m, 
+					int startingStmtID, 
+					int endingStmtID, 
+					boolean invokeMethods)
 	{
 		ArrayList<ToDoPath> result = new ArrayList<ToDoPath>();
 		ArrayList<ToDoPath> unfinished = new ArrayList<ToDoPath>();
@@ -299,61 +303,85 @@ public class SymbolicExecution {
 		{
 			ToDoPath p = unfinished.remove(unfinished.size()-1);
 			ArrayList<ToDoPath> finishedTDPs = exploreTDP(unfinished, p, m, true, invokeMethods);
-			if (p.isLegit)
-				result.addAll(finishedTDPs);
+			for (ToDoPath tdp : finishedTDPs)
+			{
+				if (tdp.isLegit)
+					result.add(tdp);
+			}
 		}
 		result = removeDupe(result);
 		return result;
 	}
 	
-	
-/*	
-	private ArrayList<ToDoPath> generateToDoPaths(StaticMethod m, int startingStmtID, int endingStmtID, boolean print)
+	public ArrayList<ToDoPath> generateToDoPaths(
+			StaticMethod m, 
+			int startingStmtID, 
+			int endingStmtID, 
+			boolean invokeMethods,
+			boolean exploreCatchBlock)
 	{
-		ArrayList<ToDoPath> result = new ArrayList<ToDoPath>();
-		ArrayList<ToDoPath> unfinished = new ArrayList<ToDoPath>();
-		ToDoPath tdP = new ToDoPath(startingStmtID, endingStmtID);
-		unfinished.add(tdP);
-		while (unfinished.size() > 0)
+		StaticStmt s = m.getStatement(endingStmtID);
+		if (!exploreCatchBlock || s == null || !s.isInCatchBlock())
 		{
-			ToDoPath p = unfinished.remove(unfinished.size()-1);
-			ArrayList<ToDoPath> finishedTDPs = exploreTDP(unfinished, p, m, true);
-			for (ToDoPath newP : finishedTDPs)
+			return this.generateToDoPaths(m, startingStmtID, endingStmtID, invokeMethods);
+		}
+		//TODO
+		// 1st part of list: start to end-of-try
+		String tryEndLabel = m.getTryEndLabel(s.getBlockName());
+		StaticStmt lastTryStmt = m.getTryEndStmt(tryEndLabel);
+		ArrayList<ToDoPath> list1 = this.generateToDoPaths(m, startingStmtID, lastTryStmt.getStatementID(), invokeMethods);
+		// 2nd part of list: beginning-of-catch to current statement
+		StaticStmt firstCatchStmt = m.getFirstStmtOfBlock(s.getBlockName());
+		ArrayList<ToDoPath> list2 = this.generateToDoPaths(m, firstCatchStmt.getStatementID(), endingStmtID, invokeMethods);
+		// merge lists
+		ArrayList<ToDoPath> result = new ArrayList<ToDoPath>();
+		for (ToDoPath p1 : list1)
+		{
+			for (ToDoPath p2 : list2)
 			{
-				if (newP.isLegit)
-					result.add(newP);
+				result.add(p1.concat(p2));
 			}
 		}
-		result = removeDupe(result);
 		return result;
-	}*/
+	}
 	
-	
+	/**
+	 * Before this, a ToDoPath only has a starting statement id, ending statement id,
+	 * and maybe some branch orders (not all of them).
+	 * This method will complete this TDP, and more TDP might spawn in the process.
+	 * There are 2 flags, 'addToDoList' determines whether new TDP will be spawned,
+	 * 'invokeMethod' determines whether nested method will be included.
+	 * 
+	 * */
 	private ArrayList<ToDoPath> exploreTDP(ArrayList<ToDoPath> tdPList, ToDoPath p, StaticMethod m, boolean addToDoList, boolean invokeMethods)
 	{
 		ArrayList<ToDoPath> result = new ArrayList<ToDoPath>();
 		result.add(p.clone());
 		int nextStmtID = p.startingStmtID;
-		while (nextStmtID != p.endingStmtID)
+		while (true)
 		{
-			StaticStmt s = m.getStatements().get(nextStmtID++);
+			StaticStmt s = m.getStatement(nextStmtID++);
 			if (s == null)
 			{
-				Thrower.throwException("SymbolicExecution.exploreTDP() ran into null StaticStmt.");
+				Thrower.throwException("SymbolicExecution.exploreTDP() ran into null StaticStmt with id=" + (nextStmtID-1));
 			}
 			if (this.printTDPSteps)
 			{
 				System.out.println("[" + s.getUniqueID() + "]");
 			}
+// Action: add current statement into execution log
 			for (ToDoPath tdP : result)
 				tdP.execLog.add(s.getUniqueID());
-			if (p.endingStmtID == s.getStatementID()) // reached specified ending
+// Decision: if current statement is the ending, break out of loop
+// This only happens when endingStmtID != -1
+			if (p.endingStmtID == s.getStatementID())
 			{
 				for (ToDoPath tdP : result)
 					tdP.isLegit = true;
 				break;
 			}
-			else if (s.isIfStmt()) // follow order or make own choice
+// Action: Deal with branch statements. Follow an order or make own choice
+			else if (s.isIfStmt())
 			{
 				for (ToDoPath tdP : result)
 				{
@@ -417,10 +445,12 @@ public class SymbolicExecution {
 					tdP.branchChoices.add(s.getUniqueID() + "," + choice);
 				}
 			}
+// Action: Deal with goto statement
 			else if (s.isGotoStmt())
 			{
 				nextStmtID = s.getGotoTargetID();
 			}
+// Action: Deal with return and throw. Decide whether this tdP is legit or not
 			else if (s.isReturnStmt() || s.isThrowStmt())
 			{
 				for (ToDoPath tdP : result)
@@ -436,6 +466,8 @@ public class SymbolicExecution {
 				}
 				break;
 			}
+// Action: Deal with invoke if flag allows.
+// Get TDPs from nested methods recursively. Then append them to current TDP list.
 			else if (s.isInvokeStmt() && invokeMethods)
 			{
 				//TODO deal with inheritance sometime
@@ -466,12 +498,16 @@ public class SymbolicExecution {
 				}
 			}
 		}
+// Action: End of exploration. Put branch choices into execution log.
 		for (ToDoPath tdP : result)
 		{
-			if (nextStmtID == tdP.endingStmtID && tdP.isLegit)
+			if (!tdP.isLegit)
+				continue;
+/*			if (nextStmtID == tdP.endingStmtID && tdP.isLegit)
 				tdP.execLog.add(m.getSignature() + ":" + nextStmtID);
 			if (tdP.endingStmtID != -1 && tdP.execLog.get(tdP.execLog.size()-1).endsWith(":"+tdP.endingStmtID))
 				tdP.isLegit = false;
+*/
 			for (String choice : tdP.branchChoices)
 			{
 				String stmtInfo = choice.split(",")[0];

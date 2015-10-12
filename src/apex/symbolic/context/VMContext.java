@@ -6,7 +6,6 @@ import java.util.Stack;
 
 import apex.parser.DEXParser;
 import apex.staticFamily.StaticApp;
-import apex.staticFamily.StaticClass;
 import apex.staticFamily.StaticField;
 import apex.staticFamily.StaticMethod;
 import apex.staticFamily.StaticStmt;

@@ -42,6 +42,15 @@ public class ToDoPath {
 		this.endingStmtID = endingStmtID;
 	}
 
+	public ToDoPath concat(ToDoPath p)
+	{
+		ToDoPath result = this.clone();
+		result.endingStmtID = p.endingStmtID;
+		result.branchChoices.addAll(p.branchChoices);
+		result.branchOrders.addAll(p.branchOrders);
+		result.execLog.addAll(p.execLog);
+		return result;
+	}
 	
 	String getOrder(String stmtID)
 	{
@@ -213,6 +222,7 @@ public class ToDoPath {
 	public void print()
 	{
 		System.out.println("\nToDoPath from stmt " + this.startingStmtID + " to " + this.endingStmtID);
+		System.out.println("Legit: " + this.isLegit);
 		System.out.println("Full execution log:");
 		for (String s : this.execLog)
 		{

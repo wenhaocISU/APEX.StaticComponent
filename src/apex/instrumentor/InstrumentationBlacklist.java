@@ -24,18 +24,23 @@ public class InstrumentationBlacklist {
 	
 	
 	public static ArrayList<String> methods = new ArrayList<String>(Arrays.asList(
-			"Lnet/mandaria/tippytipperlibrary/services/TipCalculatorService;->calculateTip()V",
-			"Lnet/mandaria/tippytipperlibrary/services/TipCalculatorService;->splitBill(I)V"
+			"*doInBackground([Ljava/lang/Void;)Ljava/lang/Integer;"
+			//"Lnet/mandaria/tippytipperlibrary/services/TipCalculatorService;->calculateTip()V",
+			//"Lnet/mandaria/tippytipperlibrary/services/TipCalculatorService;->splitBill(I)V"
 	));
+		
 	
-	
-	public static boolean classInBlackList(String className) {
-		for (String c : classes) {
-			if (c.endsWith("*")) {
+	public static boolean classInBlackList(String className)
+	{
+		for (String c : classes)
+		{
+			if (c.endsWith("*"))
+			{
 				if (className.startsWith(c.substring(0, c.lastIndexOf("*"))))
 					return true;
 			}
-			else if (c.endsWith(";")) {
+			else if (c.endsWith(";"))
+			{
 				if (className.equals(c))
 					return true;
 			}
@@ -43,8 +48,22 @@ public class InstrumentationBlacklist {
 		return false;
 	}
 	
-	public static boolean methodInBlackList(String methodSig) {
-		return methods.contains(methodSig);
+	public static boolean methodInBlackList(String methodSig)
+	{
+		for (String m : methods)
+		{
+			if (m.startsWith("*"))
+			{
+				if (methodSig.endsWith(m.substring(1)))
+					return true;
+			}
+			else
+			{
+				if (m.equals(methodSig))
+					return true;
+			}
+		}
+		return false;
 	}
 	
 

@@ -23,6 +23,7 @@ public class StaticMethod {
 	private int localRegisterCount = -1;
 	private ArrayList<String> paramDeclarations = new ArrayList<String>();
 	private ArrayList<String> methodAnnotations = new ArrayList<String>();
+	private ArrayList<String> catchInfo = new ArrayList<String>();
 	
 	/**	Call Graph Elements	*/
 	private List<String> inCallSourceSigs = new ArrayList<String>();
@@ -50,6 +51,13 @@ public class StaticMethod {
 	public boolean equals(StaticMethod m)
 	{
 		return this.getSignature().equals(m.getSignature());
+	}
+	
+	public StaticStmt getStatement(int statementID)
+	{
+		if (statementID >= 0 && this.statements.size() > statementID)
+			return this.statements.get(statementID);
+		return null;
 	}
 	
 	private void parseParams()
@@ -210,10 +218,15 @@ public class StaticMethod {
 					inTryBlock = true;
 					debugInfo.add(line);
 				}
-				else if (line.startsWith("    :try_end_") || line.startsWith("    .catch"))
+				else if (line.startsWith("    :try_end_"))
 				{
 					this.statements.get(this.statements.size()-1).addDebugInfo(line);
 					inTryBlock = false;
+				}
+				else if (line.startsWith("    .catch"))
+				{
+					this.statements.get(this.statements.size()-1).addDebugInfo(line);
+					this.catchInfo.add(line);
 				}
 				else
 				{
@@ -251,15 +264,16 @@ public class StaticMethod {
 		}
 	}
 	
+	public void simpleInstrument(StaticApp staticApp, Instrumentor instrumentor)
+	{
+		instrumentor.simpleInstrument(staticApp, this);
+	}
+	
 
 	public String findUsableRegister(StaticApp staticApp, StaticStmt s)
 	{
-		if (s.getStatementID() == 42 && s.getSmaliStmt().equals("move-exception v7"))
-		{
-			System.out.println();
-		}
 		if (this.localRegisterCount < 0)
-			return "";
+			return "none";
 		
 		// use added register if we can
 		if (this.localRegisterCount+this.getParamRegCount() < 15)
@@ -301,10 +315,12 @@ public class StaticMethod {
 			}
 		}
 		// Now we have branch statements, try block statements
-		// that are not the first statement of the method
-		// see if this statement writes stuff
+		// that are not the first statement of the method.
+		// see if this statement writes into registers that are not read in this statement
 		for (String write : s.getRegsToWrite())
 		{
+			if (write.startsWith("p"))
+				continue;
 			if (!s.getRegsToRead().contains(write))
 			{
 				return write;
@@ -315,8 +331,9 @@ public class StaticMethod {
 		// have to do a simple symbolic execution
 
 		SymbolicExecution sex = new SymbolicExecution(staticApp);
-		//sex.printTDPSteps = true;
-		ArrayList<ToDoPath> tdP = sex.generateToDoPaths(this, 0, s.getStatementID(), false);
+		// There is a special case here - statements in a catch block can't
+		// get a correct TDP in an ordinary generateToDoPath() process.
+		ArrayList<ToDoPath> tdP = sex.generateToDoPaths(this, 0, s.getStatementID(), false, s.isInCatchBlock());
 		for (ToDoPath p : tdP)
 		{
 			PathSummary ps = sex.doFullSymbolic(new VMContext(staticApp), p, this.getSignature(), -1, false);
@@ -327,10 +344,10 @@ public class StaticMethod {
 			String emptyReg = "", nonEmptyPrimitiveReg = "", nonEmptyReferenceReg = "";
 			for (Register reg : mc.getRegisters())
 			{
-				if (reg.isLocked())
+				if (reg.isLocked() || reg.isParameter())
 					continue;
 				int regNumber = Integer.parseInt(reg.getName().substring(1));
-				if (reg.getName().startsWith("p") || regNumber > 15)
+				if (regNumber > 15)
 					continue;
 				if (reg.getValue() == null)
 				{
@@ -360,7 +377,7 @@ public class StaticMethod {
 				Thrower.throwException("Can't find a usable register when instrumenting " + s.getUniqueID());
 			}
 		}
-		return "v0";
+		return "none";
 	}
 	
 	
@@ -447,6 +464,7 @@ public class StaticMethod {
 		return paramTypes;
 	}
 	
+	
 	public int getParamRegCount()
 	{
 		int result = 0;
@@ -473,6 +491,54 @@ public class StaticMethod {
 	public List<String> getFieldRefSigs()
 	{
 		return fieldRefSigs;
+	}
+	
+	public StaticStmt getTryStartStmt(String tryStartLabel)
+	{
+		for (StaticStmt s : this.statements)
+		{
+			if (s.getTryStartLabel().equals(tryStartLabel))
+				return s;
+		}
+		return null;
+	}
+	
+	public StaticStmt getTryEndStmt(String tryEndLabel)
+	{
+		for (StaticStmt s : this.statements)
+		{
+			if (s.getTryEndLabel().equals(tryEndLabel))
+				return s;
+		}
+		return null;
+	}
+	
+	public String getTryStartLabel(String catchLabel)
+	{
+		for (String info : this.catchInfo)
+		{
+			if (info.endsWith(catchLabel))
+			{
+				String tryRange = info.substring(info.indexOf("{")+1, info.indexOf("}"));
+				String tryStart = tryRange.split(" .. ")[0];
+				return tryStart;
+			}
+		}
+		return "";
+	}
+	
+	public String getTryEndLabel(String catchLabel)
+	{
+		for (String info : this.catchInfo)
+		{
+			if (info.endsWith(catchLabel))
+			{
+				String tryRange = info.substring(info.indexOf("{")+1, info.indexOf("}"));
+				String tryEnd = tryRange.split(" .. ")[1];
+				return tryEnd;
+			}
+		}
+		return "";
 	}
 	
 	public boolean throwsException()

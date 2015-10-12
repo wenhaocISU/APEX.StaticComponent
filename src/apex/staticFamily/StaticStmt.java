@@ -49,7 +49,7 @@ public class StaticStmt {
 	{
 		this.debugInfo.copyBlockLabel(s.debugInfo);
 	}
-	
+		
 	public void addPrecedingStmt(String stmtToAdd)
 	{
 		this.instrumentedStmts_before.add(stmtToAdd);
@@ -137,6 +137,11 @@ public class StaticStmt {
 	{
 		return isInTryBlock;
 	}
+	
+	public boolean isInCatchBlock()
+	{
+		return this.getBlockName().contains(":catch_");
+	}
 
 	public ArrayList<String> get_array_or_switch_data()
 	{
@@ -205,7 +210,7 @@ public class StaticStmt {
 	
 	public boolean isGotoStmt()
 	{
-		return (this.getBytecodeOperator().equals("goto"));
+		return (this.getBytecodeOperator().startsWith("goto"));
 	}
 	
 	public boolean isInvokeStmt()
@@ -221,6 +226,16 @@ public class StaticStmt {
 	public boolean hasNoBlockLabel()
 	{
 		return this.debugInfo.getBlockLabel().isEmpty();
+	}
+	
+	public String getTryStartLabel()
+	{
+		return this.debugInfo.getTryStartLabel();
+	}
+	
+	public String getTryEndLabel()
+	{
+		return this.debugInfo.getTryEndLabel();
 	}
 
 	public Expression getOperationExpression()

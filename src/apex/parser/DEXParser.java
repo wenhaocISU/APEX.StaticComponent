@@ -351,7 +351,7 @@ public class DEXParser {
 			Expression exex = new Expression("$new-instance");
 			exex.add("Ljava/lang/Exception;");
 			ex.add(vA);
-			ex.add(vA);
+			ex.add(exex);
 		}
 		/**	const	
 		 * 	NOTE(09/21/2015): since bytecode is not type sensitive,
@@ -936,12 +936,24 @@ public class DEXParser {
 			String vB = stmt.substring(stmt.indexOf(", ")+2);
 			read.add(vB);
 			write.add(vA);
+			if (s.getBytecodeOperator().contains("wide"))
+			{
+				int vAIndex = Integer.parseInt(vA.substring(1));
+				write.add(vA.substring(0, 1) + (vAIndex+1));
+				int vBIndex = Integer.parseInt(vB.substring(1));
+				read.add(vB.substring(0, 1) + (vBIndex+1));
+			}
 		}
 		/** move-result vA && move-exception vA */
 		else if (stmtIndex >= 10 && stmtIndex <= 13)
 		{
 			String vA = stmt.substring(stmt.indexOf(" ")+1);
 			read.add(vA);
+			if (s.getBytecodeOperator().contains("wide"))
+			{
+				int vAIndex = Integer.parseInt(vA.substring(1));
+				read.add(vA.substring(0, 1) + (vAIndex+1));
+			}
 		}
 		/** return variable */
 		else if (stmtIndex > 14 && stmtIndex <= 17)
@@ -1042,9 +1054,18 @@ public class DEXParser {
 		else if (stmtIndex >= 45 && stmtIndex <= 49)
 		{
 			String vs[] = stmt.substring(stmt.indexOf(" ")+1).split(", ");
+			write.add(vs[0]);
 			read.add(vs[1]);
 			read.add(vs[2]);
-			write.add(vs[0]);
+			if (s.getBytecodeOperator().endsWith("double") 
+					|| s.getBytecodeOperator().endsWith("long"))
+			{
+				String vB = vs[1], vC = vs[2];
+				int vBIndex = Integer.parseInt(vB.substring(1));
+				read.add(vB.substring(0, 1) + (vBIndex+1));
+				int vCIndex = Integer.parseInt(vC.substring(1));
+				read.add(vC.substring(0, 1) + (vCIndex+1));
+			}
 		}
 		/** if-test vA, vB, :cond_0 */
 		else if (stmtIndex >= 50 && stmtIndex <= 55)
@@ -1071,6 +1092,11 @@ public class DEXParser {
 			read.add(arrayName);
 			read.add(arrayIndex);
 			write.add(vA);
+			if (s.getBytecodeOperator().contains("wide"))
+			{
+				int vAIndex = Integer.parseInt(vA.substring(1));
+				write.add(vA.substring(0, 1) + (vAIndex+1));
+			}
 		}
 		/** aput vAA, vBB, vCC */
 		else if (stmtIndex >= 69 && stmtIndex <= 75)
@@ -1082,6 +1108,11 @@ public class DEXParser {
 			read.add(vA);
 			read.add(arrayIndex);
 			write.add(arrayName);
+			if (s.getBytecodeOperator().contains("wide"))
+			{
+				int vAIndex = Integer.parseInt(vA.substring(1));
+				read.add(vA.substring(0, 1) + (vAIndex+1));
+			}
 		}
 		/** iget vA, vB, field@CCCC */
 		else if (stmtIndex >= 76 && stmtIndex <= 82)
@@ -1091,6 +1122,11 @@ public class DEXParser {
 			String vB = vs[1];
 			read.add(vB);
 			write.add(vA);
+			if (s.getBytecodeOperator().contains("wide"))
+			{
+				int vAIndex = Integer.parseInt(vA.substring(1));
+				write.add(vA.substring(0, 1) + (vAIndex+1));
+			}
 		}
 		/** iput vA, vB, field@CCCC */
 		else if (stmtIndex >= 83 && stmtIndex <= 89)
@@ -1100,6 +1136,11 @@ public class DEXParser {
 			String vB = vs[1];
 			read.add(vA);
 			write.add(vB);
+			if (s.getBytecodeOperator().contains("wide"))
+			{
+				int vAIndex = Integer.parseInt(vA.substring(1));
+				read.add(vA.substring(0, 1) + (vAIndex+1));
+			}
 		}
 		/** sget vAA, field@BBBB */
 		else if (stmtIndex >= 90 && stmtIndex <= 96)
@@ -1107,6 +1148,11 @@ public class DEXParser {
 			String vs[] = stmt.substring(stmt.indexOf(" " )+1).split(", ");
 			String vA = vs[0];
 			write.add(vA);
+			if (s.getBytecodeOperator().contains("wide"))
+			{
+				int vAIndex = Integer.parseInt(vA.substring(1));
+				write.add(vA.substring(0, 1) + (vAIndex+1));
+			}
 		}
 		/** sput vAA, field@BBBB */
 		else if (stmtIndex >= 97 && stmtIndex <= 103)
@@ -1114,6 +1160,11 @@ public class DEXParser {
 			String vs[] = stmt.substring(stmt.indexOf(" " )+1).split(", ");
 			String vA = vs[0];
 			read.add(vA);
+			if (s.getBytecodeOperator().contains("wide"))
+			{
+				int vAIndex = Integer.parseInt(vA.substring(1));
+				read.add(vA.substring(0, 1) + (vAIndex+1));
+			}
 		}
 		/** invoke-kind {vC,vD,vE,vF,vG}, method@BBBB 
 		 * 	invoke-kind/range {vAAAA .. vNNNN}, method@MMMM
