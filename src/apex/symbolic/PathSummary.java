@@ -260,12 +260,16 @@ public class PathSummary {
 				System.out.println(stmt.getContainingMethod().getDeclaration());
 			if (stmt.isIfStmt() || stmt.isSwitchStmt())
 			{
-				String choice = s.substring(s.indexOf(","));
-				System.out.println(" " + id + "\t" + stmt.getSmaliStmt() + "\t" + choice);
+				String choice = s.substring(s.indexOf(",")+1);
+				System.out.println(" " + id + "\t" + stmt.getSmaliStmt() + "\t(" + choice + ")");
 			}
 			else
 			{
 				System.out.println(" " + id + "\t" + stmt.getSmaliStmt());
+			}
+			if (stmt.isReturnStmt() || stmt.isThrowStmt())
+			{
+				System.out.println(".end " + stmt.getContainingMethod().getDeclaration().substring(1));
 			}
 		}
 		System.out.println("Symbolic States:");

@@ -207,6 +207,7 @@ public class ToDoPath {
 	{
 		ToDoPath result = new ToDoPath(this.startingStmtID, this.endingStmtID);
 		
+		result.m = this.m;
 		result.isLegit = this.isLegit;
 		result.explored = this.explored;
 		

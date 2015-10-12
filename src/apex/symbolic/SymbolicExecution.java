@@ -48,6 +48,9 @@ public class SymbolicExecution {
 	
 	private void execute(PathSummary ps, ArrayList<String> execLog, VMContext vm, boolean invokesMethod)
 	{
+		System.out.println("doing sex on these statements:");
+		for (String log : execLog)
+			System.out.println("\t" + log);
 		for (int index = 0; index < execLog.size(); index++)
 		{
 			String stmtInfo = execLog.get(index);
@@ -180,55 +183,58 @@ public class SymbolicExecution {
 	
 	public ToDoPath expandLogcatOutput(ArrayList<String> logcat)
 	{
-		Stack<ToDoPath> paths = new Stack<ToDoPath>();
-		int i = 0;
-		while (i < logcat.size())
+		Stack<ToDoPath> stack = new Stack<ToDoPath>();
+		ArrayList<ToDoPath> results = new ArrayList<ToDoPath>();
+		int index = 0;
+		while (index < logcat.size())
 		{
-			String line = logcat.get(i++);
+			String line = logcat.get(index++);
 			if (line.startsWith("Method_Starting,"))
 			{
 				StaticMethod m = this.staticApp.getMethod(line.split(",")[1]);
 				ToDoPath path = new ToDoPath(m);
-				paths.push(path);
+				stack.push(path);
 			}
 			else if (line.startsWith("Method_Returning,"))
 			{
-				ToDoPath path = paths.pop();
+				ToDoPath path = stack.pop();
 				path.endingStmtID = -1;
-				if (!paths.isEmpty())
+				if (!stack.isEmpty())
 				{
-					ToDoPath outerPath = paths.peek();
+					ToDoPath outerPath = stack.peek();
 					outerPath.branchOrders.addAll(path.branchOrders);
 				}
 				else
 				{
-					paths.push(path);
+					//paths.push(path);
+					results.add(path);
 				}
 			}
 			else if (line.startsWith("Method_Throwing,"))
 			{
 				String stmtInfo = line.split(",")[2];
 				int throwStmtID = Integer.parseInt(stmtInfo.split(":")[1]);
-				ToDoPath path = paths.pop();
+				ToDoPath path = stack.pop();
 				path.endingStmtID = throwStmtID;
-				if (!paths.isEmpty())
+				if (!stack.isEmpty())
 				{
-					ToDoPath outerPath = paths.peek();
+					ToDoPath outerPath = stack.peek();
 					outerPath.branchOrders.addAll(path.branchOrders);
 				}
 				else
 				{
-					paths.push(path);
+					//stack.push(path);
+					results.add(path);
 				}
 			}
 			else if (line.startsWith("execLog,"))
 			{
 				String stmtInfo = line.split(",")[1];
-				ToDoPath path = paths.peek();
+				ToDoPath path = stack.peek();
 				
 				if (line.endsWith(",if"))
 				{
-					String nextLine = logcat.get(i++);
+					String nextLine = logcat.get(index++);
 					String order = stmtInfo + ",jump";
 					if (nextLine.endsWith(",flow_through"))
 					{
@@ -239,7 +245,7 @@ public class SymbolicExecution {
 				
 				else if (line.endsWith(",switch"))
 				{
-					String nextLine = logcat.get(i++);
+					String nextLine = logcat.get(index++);
 					String order = stmtInfo + ",flow";
 					if (!nextLine.endsWith(",flow_through"))
 					{
@@ -268,13 +274,35 @@ public class SymbolicExecution {
 				}
 			}
 		}
-		if (paths.size() != 1)
+/*		if (paths.size() != 1)
 		{
 			Thrower.throwException("Expanding logcat output has failed.");
 		}
 		ToDoPath p = paths.pop();
-		p.generateExecLogFromOrders(staticApp);
-		return p;
+		*/
+		ToDoPath result = new ToDoPath(0, -1);
+		for (int i = 0; i < results.size(); i++)
+		{
+			ToDoPath p = results.get(i);
+			p.generateExecLogFromOrders(staticApp);
+			if (i == 0)
+			{
+				result = p.clone();
+			}
+			else
+			{
+				result = result.concat(p);
+			}
+/*			System.out.println("TDP " + i);
+			System.out.println("==============First stage expansion result:");
+			p.print();
+			
+			System.out.println("==============Second stage expansion result:");
+			p.print();*/
+		}
+		
+
+		return result;
 	}
 	
 	/**
