@@ -94,8 +94,13 @@ public class PathSummary {
 	public PathSummary concat(PathSummary ps)
 	{
 		SymbolicExecution sex = new SymbolicExecution(this.vm.getStaticApp());
+		//sex.printStmtInfo = true;
 		String concatSig = this.methodSignature + " concat " + ps.methodSignature;
-		PathSummary result = sex.doFullSymbolic(this.vm.copy(), ps.p, this.pathCondition, concatSig, this.id + ps.id);
+		if (ps.methodSignature.contains(" concat "))
+		{
+			System.out.println();
+		}
+		PathSummary result = sex.doFullSymbolic(this.vm.copy(), this.p.concat(ps.p), this.pathCondition, concatSig, this.id + ps.id);
 		result.executionLog = new ArrayList<String>(this.executionLog);
 		result.executionLog.addAll(ps.executionLog);
 		return result;
@@ -253,7 +258,15 @@ public class PathSummary {
 			String id = stmtInfo.substring(stmtInfo.indexOf(":")+1);
 			if (stmt.isFirstStmtOfMethod())
 				System.out.println(stmt.getContainingMethod().getDeclaration());
-			System.out.println(" " + id + "\t" + stmt.getSmaliStmt());
+			if (stmt.isIfStmt() || stmt.isSwitchStmt())
+			{
+				String choice = s.substring(s.indexOf(","));
+				System.out.println(" " + id + "\t" + stmt.getSmaliStmt() + "\t" + choice);
+			}
+			else
+			{
+				System.out.println(" " + id + "\t" + stmt.getSmaliStmt());
+			}
 		}
 		System.out.println("Symbolic States:");
 		ArrayList<Expression> states = this.getSymbolicStates();

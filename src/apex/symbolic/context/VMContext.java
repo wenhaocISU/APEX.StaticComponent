@@ -357,11 +357,13 @@ public class VMContext {
 		{
 			this.endsWithThrow = true;
 			this.pop();
+			this.invokeParams.clear();
 		}
 		else if (s.isReturnStmt())
 		{
 			this.endsWithThrow = false;
 			MethodContext mc = this.pop();
+			this.invokeParams.clear();
 			String returnedVariable = s.getReturnedVariable();
 			if (!returnedVariable.equals(""))
 			{
