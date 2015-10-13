@@ -48,9 +48,6 @@ public class SymbolicExecution {
 	
 	private void execute(PathSummary ps, ArrayList<String> execLog, VMContext vm, boolean invokesMethod)
 	{
-		System.out.println("doing sex on these statements:");
-		for (String log : execLog)
-			System.out.println("\t" + log);
 		for (int index = 0; index < execLog.size(); index++)
 		{
 			String stmtInfo = execLog.get(index);
