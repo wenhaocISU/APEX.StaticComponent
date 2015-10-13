@@ -1,7 +1,6 @@
 package apex.symbolic.context;
 
 import java.util.ArrayList;
-import java.util.List;
 
 import apex.parser.DEXParser;
 import apex.staticFamily.StaticMethod;
