@@ -46,7 +46,7 @@ public class StmtDebugInfo {
 		{
 			this.tryEndLabel = line;
 		}
-		else if (line.startsWith("    :"))
+		else if (line.startsWith("    :"))	// all other kind of labels
 		{
 			this.blockLabels.add(line);
 			this.isFirstStmtOfBlock = true;
@@ -78,6 +78,16 @@ public class StmtDebugInfo {
 	ArrayList<String> getBlockLabel()
 	{
 		return blockLabels;
+	}
+	
+	String getTryStartLabel()
+	{
+		return this.tryStartLabel.contains(" ")?this.tryStartLabel.trim() : this.tryStartLabel;
+	}
+	
+	String getTryEndLabel()
+	{
+		return this.tryEndLabel.contains(" ")?this.tryEndLabel.trim() : this.tryEndLabel;
 	}
 	
 	ArrayList<String> getPreStmtSection()

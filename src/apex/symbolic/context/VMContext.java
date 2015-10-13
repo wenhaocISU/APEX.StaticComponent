@@ -6,7 +6,6 @@ import java.util.Stack;
 
 import apex.parser.DEXParser;
 import apex.staticFamily.StaticApp;
-import apex.staticFamily.StaticClass;
 import apex.staticFamily.StaticField;
 import apex.staticFamily.StaticMethod;
 import apex.staticFamily.StaticStmt;
@@ -358,11 +357,13 @@ public class VMContext {
 		{
 			this.endsWithThrow = true;
 			this.pop();
+			this.invokeParams.clear();
 		}
 		else if (s.isReturnStmt())
 		{
 			this.endsWithThrow = false;
 			MethodContext mc = this.pop();
+			this.invokeParams.clear();
 			String returnedVariable = s.getReturnedVariable();
 			if (!returnedVariable.equals(""))
 			{

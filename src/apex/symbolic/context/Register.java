@@ -6,7 +6,7 @@ public class Register {
 
 	String name;
 	Value value;
-	boolean isParameter;
+	boolean isParameter = false;
 	boolean isLocked = false;
 	
 	Register(String name, boolean isParameter)
@@ -26,6 +26,16 @@ public class Register {
 		if (this.isLocked)
 			return null;
 		return this.value;
+	}
+	
+	public boolean isParameter()
+	{
+		return this.isParameter;
+	}
+	
+	void lock()
+	{
+		this.isLocked = true;
 	}
 	
 	public boolean isLocked()

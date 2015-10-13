@@ -6,7 +6,6 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.PrintWriter;
 import java.util.ArrayList;
-import java.util.Arrays;
 
 import apex.staticFamily.StaticApp;
 import apex.staticFamily.StaticField;
@@ -52,6 +51,24 @@ public class Instrumentor {
 		}
 	}
 	
+	public void simpleInstrument(StaticApp staticApp, StaticMethod m)
+	{
+		for (StaticStmt s : m.getStatements())
+		{
+			if (s.isFirstStmtOfMethod())
+			{
+				addPrintLnBefore(staticApp, s, "Method_Starting," + m.getSignature());
+			}
+			if (s.isReturnStmt())
+			{
+				addPrintLnBefore(staticApp, s, "Method_Returning," + m.getSignature());
+			}
+			else if (s.isThrowStmt())
+			{
+				addPrintLnBefore(staticApp, s, "Method_Throwing," + m.getSignature() + "," + s.getUniqueID());
+			}
+		}
+	}
 	
 	/**
 	 * Things to do:
@@ -75,7 +92,7 @@ public class Instrumentor {
 		}
 		
 		// Job 2
-		if (s.getBlockName().contains(":catch_") && s.isFirstStmtOfBlock())
+		if (s.isFirstStmtOfBlock() && s.getBlockName().contains(":catch_"))
 		{
 			// "move-exception" must be the first statement of a catch block
 			// therefore println must be inserted after instead of before
@@ -119,7 +136,7 @@ public class Instrumentor {
 	// this will only be called for if and switch statements
 	private void addPrintLnBeforeAndAfter(StaticApp staticApp, StaticStmt s, String textBefore, String textAfter)
 	{
-		String regInfo = s.getContainingMethod().findUsableRegister(staticApp, s);
+		String regInfo = findUsableRegister(staticApp, s);
 		ArrayList<String> printlnStmtsBefore = generatePrintLnStmts(staticApp, s, textBefore, regInfo);
 		ArrayList<String> printlnStmtsAfter = generatePrintLnStmts(staticApp, s, textAfter, regInfo);
 		for (String stmt : printlnStmtsBefore)
@@ -134,7 +151,7 @@ public class Instrumentor {
 	
 	private void addPrintLnBefore(StaticApp staticApp, StaticStmt s, String text)
 	{
-		String regInfo = s.getContainingMethod().findUsableRegister(staticApp, s);
+		String regInfo = findUsableRegister(staticApp, s);
 		ArrayList<String> printlnStmts = generatePrintLnStmts(staticApp, s, text, regInfo);
 		if (s.getBytecodeOperator().startsWith("move-result"))	// move-result and method invocation must not be separated
 		{
@@ -154,12 +171,17 @@ public class Instrumentor {
 	
 	private void addPrintLnAfter(StaticApp staticApp, StaticStmt s, String text)
 	{
-		String regInfo = s.getContainingMethod().findUsableRegister(staticApp, s);
+		String regInfo = findUsableRegister(staticApp, s);
 		ArrayList<String> printlnStmts = generatePrintLnStmts(staticApp, s, text, regInfo);
 		for (String stmt : printlnStmts)
 		{
 			s.addSucceedingStmt(stmt);
 		}
+	}
+	
+	private String findUsableRegister(StaticApp staticApp, StaticStmt s)
+	{
+		return s.getContainingMethod().findUsableRegister(staticApp, s);
 	}
 	
 	/** Some tricky methods to instrument:
@@ -176,6 +198,10 @@ public class Instrumentor {
 	private ArrayList<String> generatePrintLnStmts(StaticApp staticApp, StaticStmt s, String text, String regInfo)
 	{
 		ArrayList<String> result = new ArrayList<String>();
+		if (regInfo.equals("none"))
+		{
+			return result;
+		}
 		String regName = "", regType = "";
 		if (regInfo.contains(":"))
 		{
@@ -190,7 +216,7 @@ public class Instrumentor {
 		String invokeStmt = "    invoke-static {" + regName + "}, Lapex/instrumented/Println;->print(Ljava/lang/String;)V";
 		if (!regType.equals(""))
 		{
-			boolean isStatic = s.getContainingMethod().isStatic();
+			//boolean isStatic = s.getContainingMethod().isStatic();
 			StaticField f = s.getContainingMethod().getDeclaringClass().getTempField(regType, true);
 			
 /*			String putOp = isStatic? "s" + getPutFieldOpKeyword(regType): "i" + getPutFieldOpKeyword(regType);

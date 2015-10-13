@@ -1,6 +1,7 @@
 package apex.symbolic.context;
 
 import java.util.ArrayList;
+import java.util.List;
 
 import apex.parser.DEXParser;
 import apex.staticFamily.StaticMethod;
@@ -429,6 +430,16 @@ public class MethodContext {
 	public void writeRegister(String destName, Value value)
 	{
 		this.getRegister(destName).assign(value.clone());
+		if (value.getType().equals("J") || value.getType().equals("D"))
+		{
+			int vAIndex = Integer.parseInt(destName.substring(1));
+			this.lockRegister(destName.substring(0, 1) + (vAIndex+1));
+		}
+	}
+	
+	public void lockRegister(String regName)
+	{
+		this.getRegister(regName).lock();
 	}
 	
 	public void printSnapshot()

@@ -241,8 +241,13 @@ public class StaticClass {
 		for (StaticMethod m : this.methods)
 		{
 			if (instrumentor.blackListOn && InstrumentationBlacklist.methodInBlackList(m.getSignature()))
-				continue;
-			m.instrument(staticApp, instrumentor);
+			{
+				m.simpleInstrument(staticApp, instrumentor);
+			}
+			else
+			{
+				m.instrument(staticApp, instrumentor);
+			}
 		}
 	}
 	
