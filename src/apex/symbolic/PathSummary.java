@@ -71,6 +71,22 @@ public class PathSummary {
 		return result;
 	}
 	
+	public ArrayList<String> getSourceCodeLog()
+	{
+		ArrayList<String> result = new ArrayList<String>();
+		for (int i = 0; i < this.executionLog.size(); i++)
+		{
+			String line = this.executionLog.get(i);
+			String stmtInfo = line.contains(",")? line.substring(0, line.indexOf(",")) : line;
+			StaticStmt s = this.vm.getStaticApp().getStmt(stmtInfo);
+			if (s.hasSourceLineNumber())
+			{
+				result.add(s.getContainingMethod().getDeclaringClass().getJavaName() + ":" + s.getSourceLineNumber());
+			}
+		}
+		return result;
+	}
+	
 	public String getMethodSignature()
 	{
 		return this.methodSignature;
@@ -271,6 +287,11 @@ public class PathSummary {
 			{
 				System.out.println(".end " + stmt.getContainingMethod().getDeclaration().substring(1));
 			}
+		}
+		System.out.println("Source Code Log:");
+		for (String s : this.getSourceCodeLog())
+		{
+			System.out.println(" " + s);
 		}
 		System.out.println("Symbolic States:");
 		ArrayList<Expression> states = this.getSymbolicStates();

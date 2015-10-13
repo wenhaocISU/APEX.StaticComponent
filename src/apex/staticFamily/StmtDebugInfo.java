@@ -138,7 +138,7 @@ public class StmtDebugInfo {
 		return this.isFirstStmtOfBlock;
 	}
 	
-	public int getOriginalLineNumber()
+	public int getSourceLineNumber()
 	{
 		return this.lineNumber;
 	}

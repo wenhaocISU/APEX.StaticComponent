@@ -218,9 +218,14 @@ public class StaticStmt {
 		return (this.getBytecodeOperator().startsWith("invoke"));
 	}
 	
-	public boolean hasOriginalLineNumber()
+	public boolean hasSourceLineNumber()
 	{
-		return (this.debugInfo.getOriginalLineNumber() > 0);
+		return (this.debugInfo.getSourceLineNumber() > 0);
+	}
+	
+	public int getSourceLineNumber()
+	{
+		return this.debugInfo.getSourceLineNumber();
 	}
 	
 	public boolean hasNoBlockLabel()
