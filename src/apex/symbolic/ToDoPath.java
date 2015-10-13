@@ -57,7 +57,7 @@ public class ToDoPath {
 		orderIndex++;
 		if (orderIndex >= branchOrders.size())
 		{
-			for (String choice : branchOrders)
+			for (String choice : branchChoices)
 			{
 				if (choice.startsWith(stmtID + ","))
 				{

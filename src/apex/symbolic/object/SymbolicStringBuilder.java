@@ -45,7 +45,11 @@ public class SymbolicStringBuilder extends SymbolicObject{
 	
 	public Expression toStringExpression()
 	{
-		return this.stringEx.clone();
+		if (this.stringEx != null)
+			return this.stringEx.clone();
+		Expression result = new Expression("$const-string");
+		result.add("\"\"");
+		return result;
 	}
 	
 	public SymbolicStringBuilder clone()
