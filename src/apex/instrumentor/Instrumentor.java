@@ -91,7 +91,7 @@ public class Instrumentor {
 		// Job 4 - disabled for now
 		if (s.isInTryBlock())
 		{
-			//addPrintLnBefore(staticApp, s, "execLog," + s.getUniqueID() + ",try");
+			addPrintLnBefore(staticApp, s, "execLog," + s.getUniqueID() + ",try");
 		}
 		
 		// Job 5,6
