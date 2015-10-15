@@ -14,7 +14,7 @@ public class Thrower {
 		catch (Exception e)
 		{
 			e.printStackTrace();
-			System.exit(1);
+			//System.exit(1);
 		}
 	}
 	
@@ -28,7 +28,7 @@ public class Thrower {
 		{
 			e.printStackTrace();
 			vm.printSnapshot();
-			System.exit(1);
+			//System.exit(1);
 		}
 	}
 	
