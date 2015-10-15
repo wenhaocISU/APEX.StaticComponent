@@ -107,6 +107,7 @@ public class ToDoPath {
 				Thrower.throwException("ToDoPath.generateExecLogFromOrders() ran into null StaticStmt.");
 			}
 			this.execLog.add(s.getUniqueID());
+			System.out.println("[Oct15]" + s.getUniqueID());
 			if (this.endingStmtID == s.getStatementID() && methods.peek().getSignature().equals(this.m.getSignature()))
 			{
 				methods.pop();
