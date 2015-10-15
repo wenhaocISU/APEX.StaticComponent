@@ -134,7 +134,7 @@ public class ToDoPath {
 				}
 				else
 				{
-					Thrower.throwException("ToDoPath.generateExecLogFromOrders() failed to find an order.");
+					Thrower.throwException("ToDoPath.generateExecLogFromOrders() failed to find an order at stmt " + s.getUniqueID());
 				}
 				this.branchChoices.add(s.getUniqueID()+","+choice);
 				this.execLog.remove(this.execLog.size()-1);

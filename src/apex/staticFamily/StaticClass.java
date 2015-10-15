@@ -251,6 +251,14 @@ public class StaticClass {
 		}
 	}
 	
+	public void simpleInstrument(StaticApp staticApp, Instrumentor instrumentor)
+	{
+		for (StaticMethod m : this.methods)
+		{
+			m.simpleInstrument(staticApp, instrumentor);
+		}
+	}
+	
 	public ArrayList<String> getInstrumentedBody()
 	{
 		ArrayList<String> result = new ArrayList<String>();

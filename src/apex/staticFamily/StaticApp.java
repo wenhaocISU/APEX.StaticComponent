@@ -61,12 +61,18 @@ public class StaticApp {
 		for (StaticClass c : this.classes)
 		{
 			if (instrumentor.blackListOn && InstrumentationBlacklist.classInBlackList(c.getDexName()))
+			{
+				//c.simpleInstrument(this, instrumentor);
 				continue;
+			}
+			else
+			{
+				c.instrument(this, instrumentor);
+			}
 			File smaliFile = new File(c.getInstrumentedSmaliPath());
 			smaliFile.getParentFile().mkdirs();
 			try
 			{
-				c.instrument(this, instrumentor);
 				PrintWriter out = new PrintWriter(new FileWriter(smaliFile));
 				ArrayList<String> newSmali = c.getInstrumentedBody();
 				for (String s : newSmali)
@@ -233,6 +239,25 @@ public class StaticApp {
 			if (c.isMainActivity())
 				return c;
 		return null;
+	}
+	
+	public int getSourceLineCount()
+	{
+		int result = 0;
+		for (StaticClass c : this.classes)
+		{
+			if (InstrumentationBlacklist.classInBlackList(c.getDexName()))
+				continue;
+			for (StaticMethod m : c.getMethods())
+			{
+				for (StaticStmt s : m.getStatements())
+				{
+					if (s.hasSourceLineNumber())
+						result++;
+				}
+			}
+		}
+		return result;
 	}
 	
 	public String getInstrumentedApkPath() {

@@ -15,13 +15,14 @@ public class InstrumentationBlacklist {
 			"Lcom/example/androidtest/R*",
 			"Lcom/actionbarsherlock/*",
 			"Lcom/flurry/sdk/*",
-			"Lcom/flurry/android/*",
 			"Lorg/kobjects/*",
 			"Lorg/ksoap2/*",
 			"Lorg/kxml2/*",
 			"Lorg/xmlpull/*"
 	));
 	
+	
+
 	
 	public static ArrayList<String> methods = new ArrayList<String>(Arrays.asList(
 			"*doInBackground([Ljava/lang/Void;)Ljava/lang/Integer;"
