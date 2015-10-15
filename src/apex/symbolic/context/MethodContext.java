@@ -389,7 +389,17 @@ public class MethodContext {
 					String piRegName = params.get(i);
 					Value piValue = this.getRegister(piRegName).getValue();
 					if (piValue != null)
-						resultEx.add(piValue.getExpression().clone());
+					{
+						if (piValue instanceof LiteralValue)
+						{
+							resultEx.add(piValue.getExpression().clone());
+						}
+						else if (piValue instanceof ReferenceValue)
+						{
+							SymbolicObject obj = this.vm.getObject(((ReferenceValue) piValue).getAddress()); 
+							resultEx.add(obj.getExpression());
+						}
+					}
 				}
 				if (DEXParser.isPrimitiveType(returnType) || returnType.equals("Ljava/lang/String;"))
 				{

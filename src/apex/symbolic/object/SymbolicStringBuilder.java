@@ -25,6 +25,10 @@ public class SymbolicStringBuilder extends SymbolicObject{
 		this.stringEx = v.getExpression().clone();
 	}
 
+	public Expression getExpression()
+	{
+		return this.toStringExpression();
+	}
 	
 	public ReferenceValue append(String appendSignature, LiteralValue toAppend)
 	{

@@ -59,6 +59,7 @@ public class SymbolicArray extends SymbolicObject{
 	{
 		return this.expression;
 	}
+
 	
 	public String getArrayType()
 	{
