@@ -22,6 +22,7 @@ public class SymbolicExecution {
 	public boolean printStmtInfo = false;
 	public boolean printVMStatus = false;
 	public boolean printTDPSteps = false;
+	public static int MaxPathCount = 1000;
 	
 	public SymbolicExecution(StaticApp staticApp)
 	{
@@ -150,6 +151,54 @@ public class SymbolicExecution {
 				}
 			}
 		}
+	}
+	
+	public void testMethodPathComplexity(StaticMethod m)
+	{
+		List<String> stmtIDs = new ArrayList<String>();
+		int branchStmtCount = 0;
+		Stack<StaticMethod> methodStack = new Stack<StaticMethod>();
+		Stack<Integer> returnStack = new Stack<Integer>();
+		methodStack.push(m);
+		int nextStmtID = 0;
+		while (!methodStack.isEmpty())
+		{
+			StaticStmt s = methodStack.peek().getStatement(nextStmtID++);
+			if (s.isIfStmt() || s.isSwitchStmt())
+			{
+				branchStmtCount++;
+				stmtIDs.add(s.getUniqueID() + "\t" + s.getSmaliStmt());
+			}
+			else if (s.isGotoStmt())
+			{
+				nextStmtID = s.getGotoTargetID();
+			}
+			else if (s.isReturnStmt() || s.isThrowStmt())
+			{
+				methodStack.pop();
+				if (!returnStack.isEmpty())
+					nextStmtID = returnStack.pop();
+			}
+			else if (s.isInvokeStmt())
+			{
+				String invokeSig = s.getInvokeSignature();
+				String className = invokeSig.split("->")[0];
+				StaticClass c = this.staticApp.getClassByDexName(className);
+				if (c != null && !SymbolicExecutionBlacklist.classInBlackList(className))
+				{
+					StaticMethod targetM = staticApp.getMethod(invokeSig);
+					if (targetM != null && !targetM.isAbstract() && !targetM.getStatements().isEmpty())
+					{
+						methodStack.push(targetM);
+						returnStack.push(s.getStatementID()+1);
+						nextStmtID = 0;
+					}
+				}
+			}
+		}
+		System.out.println("Total branch stmt count: " + branchStmtCount);
+		for (String s : stmtIDs)
+			System.out.println(s);
 	}
 	
 	public PathSummary doFullSymbolic(VMContext vm, ToDoPath p, String methodSig, int id, boolean invokesMethod)
@@ -371,9 +420,16 @@ public class SymbolicExecution {
 		unfinished = new ArrayList<ToDoPath>();
 		ToDoPath p = new ToDoPath(m);
 		unfinished.add(p);
-		while (!unfinished.isEmpty())
+		int index = 0;
+		while (!unfinished.isEmpty() && result.size() < MaxPathCount)
 		{
+			System.out.println("after exploration No." + index++ + ", unfinished size = " + unfinished.size());
 			ToDoPath tdp = unfinished.remove(unfinished.size()-1);
+			if (this.printTDPSteps)
+			{
+				System.out.println("=============exploring TDP");
+				tdp.print();
+			}
 			fullyExploreTDP(tdp);
 			result.add(tdp);
 		}
@@ -389,6 +445,10 @@ public class SymbolicExecution {
 		while (!methodStack.isEmpty())
 		{
 			StaticStmt s = methodStack.peek().getStatement(nextStmtID++);
+			if (this.printTDPSteps)
+			{
+				System.out.println(" " + s.getUniqueID());
+			}
 			p.execLog.add(s.getUniqueID());
 			if (s.isReturnStmt() || s.isThrowStmt())
 			{
