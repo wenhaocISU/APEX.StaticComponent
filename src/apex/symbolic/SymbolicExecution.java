@@ -420,16 +420,9 @@ public class SymbolicExecution {
 		unfinished = new ArrayList<ToDoPath>();
 		ToDoPath p = new ToDoPath(m);
 		unfinished.add(p);
-		int index = 0;
 		while (!unfinished.isEmpty() && result.size() < MaxPathCount)
 		{
-			System.out.println("after exploration No." + index++ + ", unfinished size = " + unfinished.size());
 			ToDoPath tdp = unfinished.remove(unfinished.size()-1);
-			if (this.printTDPSteps)
-			{
-				System.out.println("=============exploring TDP");
-				tdp.print();
-			}
 			fullyExploreTDP(tdp);
 			result.add(tdp);
 		}
