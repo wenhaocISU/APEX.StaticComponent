@@ -11,7 +11,7 @@ public class SymbolicObject{
 	public String address;
 	Expression expression;
 	Map<String, Value> members = new HashMap<String, Value>();
-	
+	public boolean checked;
 
 	
 	SymbolicObject()

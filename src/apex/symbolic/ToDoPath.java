@@ -204,6 +204,14 @@ public class ToDoPath {
 		return result;
 	}
 	
+	ToDoPath spawn(String newOrder)
+	{
+		ToDoPath result = new ToDoPath(this.m);
+		result.branchOrders = new ArrayList<String>(this.branchChoices);
+		result.branchOrders.add(newOrder);
+		return result;
+	}
+	
 	public ToDoPath clone()
 	{
 		ToDoPath result = new ToDoPath(this.startingStmtID, this.endingStmtID);

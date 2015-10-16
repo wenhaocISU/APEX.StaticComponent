@@ -181,11 +181,16 @@ public class PathSummary {
 			this.symbolicStates = new ArrayList<Expression>();
 			for (SymbolicObject obj : this.vm.getSymbolicObjects())
 			{
+				obj.checked = false;
+			}
+			for (SymbolicObject obj : this.vm.getSymbolicObjects())
+			{
 				Expression objEx = obj.getExpression();
 				if (objEx.getContent().equals("$this") || 
 						objEx.getContent().startsWith("$p") ||
 						objEx.getContent().equals("$static-fields"))
 				{
+					obj.checked = true;
 					Map<String, Value> fields = obj.getFields();
 					for (Map.Entry<String, Value> entry : fields.entrySet())
 					{
@@ -226,17 +231,21 @@ public class PathSummary {
 		else if (entry.getValue() instanceof ReferenceValue)
 		{
 			SymbolicObject fieldObj = this.vm.getObject(entry.getValue().getExpression().getContent());
-			Expression concreteState = fieldObj.getExpression();
-			if (!concreteState.equals(symbolicState))
+			if (!fieldObj.checked)
 			{
-				Expression out = new Expression("=");
-				out.add(symbolicState.clone());
-				out.add(concreteState.clone());
-				this.symbolicStates.add(out);
-			}
-			for (Map.Entry<String, Value> nextLevelEntry : fieldObj.getFields().entrySet())
-			{
-				reportFieldState(nextLevelEntry, symbolicState);
+				Expression concreteState = fieldObj.getExpression();
+				if (!concreteState.equals(symbolicState))
+				{
+					Expression out = new Expression("=");
+					out.add(symbolicState.clone());
+					out.add(concreteState.clone());
+					this.symbolicStates.add(out);
+				}
+				fieldObj.checked = true;
+				for (Map.Entry<String, Value> nextLevelEntry : fieldObj.getFields().entrySet())
+				{
+					reportFieldState(nextLevelEntry, symbolicState);
+				}
 			}
 		}
 	}	

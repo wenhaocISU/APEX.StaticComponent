@@ -356,7 +356,7 @@ public class MethodContext {
 			return;
 		String invokeSig = s.getInvokeSignature();
 		StaticMethod targetM = this.vm.staticApp.getMethod(invokeSig);
-		if (targetM != null && !SymbolicExecutionBlacklist.classInBlackList(targetM.getDeclaringClass().getDexName()))
+		if (targetM != null && !SymbolicExecutionBlacklist.classInBlackList(targetM.getDeclaringClass().getDexName()) && !targetM.isAbstract())
 			return;
 		if (Controller.tryAllModelers(vm, this, s))
 		{}

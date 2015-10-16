@@ -35,7 +35,7 @@ public class SymbolicExecution {
 			Thrower.throwException("StaticMethod object is null!");
 		}
 		List<PathSummary> result = new ArrayList<PathSummary>();
-		List<ToDoPath> pathList = this.generateToDoPaths(m, 0, -1);
+		List<ToDoPath> pathList = this.generateFullToDoPaths(m);
 		int id = 0;
 		for (ToDoPath p : pathList)
 		{
@@ -271,12 +271,7 @@ public class SymbolicExecution {
 				}
 			}
 		}
-/*		if (paths.size() != 1)
-		{
-			Thrower.throwException("Expanding logcat output has failed.");
-		}
-		ToDoPath p = paths.pop();
-		*/
+
 		ToDoPath result = new ToDoPath(0, -1);
 		for (int i = 0; i < results.size(); i++)
 		{
@@ -290,12 +285,7 @@ public class SymbolicExecution {
 			{
 				result = result.concat(p);
 			}
-/*			System.out.println("TDP " + i);
-			System.out.println("==============First stage expansion result:");
-			p.print();
-			
-			System.out.println("==============Second stage expansion result:");
-			p.print();*/
+
 		}
 		
 
@@ -315,9 +305,9 @@ public class SymbolicExecution {
 	}
 	
 	public ArrayList<ToDoPath> generateToDoPaths(
-					StaticMethod m, 
-					int startingStmtID, 
-					int endingStmtID, 
+					StaticMethod m,
+					int startingStmtID,
+					int endingStmtID,
 					boolean invokeMethods)
 	{
 		ArrayList<ToDoPath> result = new ArrayList<ToDoPath>();
@@ -350,7 +340,6 @@ public class SymbolicExecution {
 		{
 			return this.generateToDoPaths(m, startingStmtID, endingStmtID, invokeMethods);
 		}
-		//TODO
 		// 1st part of list: start to end-of-try
 		String tryEndLabel = m.getTryEndLabel(s.getBlockName());
 		StaticStmt lastTryStmt = m.getTryEndStmt(tryEndLabel);
@@ -370,14 +359,137 @@ public class SymbolicExecution {
 		return result;
 	}
 	
+	private ArrayList<ToDoPath> unfinished = new ArrayList<ToDoPath>();
+	public List<ToDoPath> generateFullToDoPaths(StaticMethod m)
+	{
+		List<ToDoPath> result = new ArrayList<ToDoPath>();
+		if (m == null || m.isAbstract() || m.getStatements().isEmpty())
+		{
+			return result;
+		}
+
+		unfinished = new ArrayList<ToDoPath>();
+		ToDoPath p = new ToDoPath(m);
+		unfinished.add(p);
+		while (!unfinished.isEmpty())
+		{
+			ToDoPath tdp = unfinished.remove(unfinished.size()-1);
+			fullyExploreTDP(tdp);
+			result.add(tdp);
+		}
+		return result;
+	}
+	
+	void fullyExploreTDP(ToDoPath p)
+	{
+		Stack<StaticMethod> methodStack = new Stack<StaticMethod>();
+		Stack<Integer> returnIDStack = new Stack<Integer>();
+		methodStack.push(p.m);
+		int nextStmtID = 0;
+		while (!methodStack.isEmpty())
+		{
+			StaticStmt s = methodStack.peek().getStatement(nextStmtID++);
+			p.execLog.add(s.getUniqueID());
+			if (s.isReturnStmt() || s.isThrowStmt())
+			{
+				methodStack.pop();
+				if (!returnIDStack.isEmpty())
+					nextStmtID = returnIDStack.pop();
+			}
+			else if (s.isGotoStmt())
+			{
+				nextStmtID = s.getGotoTargetID();
+			}
+			else if (s.isInvokeStmt())
+			{
+				String invokeSig = s.getInvokeSignature();
+				String className = invokeSig.split("->")[0];
+				StaticClass c = this.staticApp.getClassByDexName(className);
+				if (c != null && !SymbolicExecutionBlacklist.classInBlackList(className))
+				{
+					StaticMethod targetM = staticApp.getMethod(invokeSig);
+					if (targetM != null && !targetM.isAbstract() && !targetM.getStatements().isEmpty())
+					{
+						methodStack.push(targetM);
+						returnIDStack.push(s.getStatementID()+1);
+						nextStmtID = 0;
+					}
+				}
+			}
+			else if (s.isIfStmt())
+			{
+				String order = p.getOrder(s.getUniqueID());
+				String choice = order;
+				if (choice.startsWith("force"))
+				{
+					choice = choice.replace("force", "");
+				}
+				if (choice.equals("jump"))
+				{
+					nextStmtID = s.getIfJumpTargetID();
+				}
+				else if (choice.equals("flow"))
+				{}
+				else // if no orders to follow, then choose flow through
+				{
+					choice = "flow";
+					ToDoPath newTDP = p.spawn(s.getUniqueID() + ",jump");
+					unfinished.add(newTDP);
+				}
+				p.branchChoices.add(s.getUniqueID()+ "," + choice);
+				p.execLog.remove(p.execLog.size()-1);
+				p.execLog.add(s.getUniqueID()+","+choice);
+			}
+			else if (s.isSwitchStmt())
+			{
+				Map<Integer, String> switchMap = s.getSwitchMap();
+				String order = p.getOrder(s.getUniqueID());
+				String choice = order;
+				if (choice.startsWith("force"))
+				{
+					choice = choice.replace("force", "");
+				}
+				else if (choice.equals("flow"))
+				{}
+				else if (choice.startsWith("case"))
+				{
+					int caseValue = Integer.parseInt(order.replace("case", ""));
+					String label = switchMap.get(caseValue);
+					nextStmtID = methodStack.peek().getFirstStmtOfBlock(label).getStatementID();
+				}
+				else
+				{
+					choice = "flow";
+					for (int caseValue : switchMap.keySet())
+					{
+						ToDoPath newTDP = p.spawn(s.getUniqueID() + ",case" + caseValue);
+						unfinished.add(newTDP);
+					}
+				}
+				p.branchChoices.add(s.getUniqueID() + "," + choice);
+				p.execLog.remove(p.execLog.size()-1);
+				p.execLog.add(s.getUniqueID()+","+choice);
+			}
+		}
+	}
+	
+	
 	/**
 	 * Before this, a ToDoPath only has a starting statement id, ending statement id,
 	 * and maybe some branch orders (not all of them).
 	 * This method will complete this TDP, and more TDP might spawn in the process.
 	 * There are 2 flags, 'addToDoList' determines whether new TDP will be spawned,
 	 * 'invokeMethod' determines whether nested method will be included.
+	 * @param newTDPs a list of ToDoPaths where newly spawned ToDoPaths will be put in
+	 * @param p the ToDoPath to be explored
+	 * @param m the StaticMethod object where p starts from
+	 * @param spawnNewTDP flag of whether spawning new branches from newly encountered branches
+	 * @param invokeMethods flag of whether generating execution log from nested method calls
+	 * 
+	 * @return a list of all ToDoPaths generated from p. (result is a list because nested method calls can contain more than 1 paths)
 	 * 
 	 * */
+	
 	private ArrayList<ToDoPath> exploreTDP(ArrayList<ToDoPath> tdPList, ToDoPath p, StaticMethod m, boolean addToDoList, boolean invokeMethods)
 	{
 		ArrayList<ToDoPath> result = new ArrayList<ToDoPath>();
@@ -392,7 +504,17 @@ public class SymbolicExecution {
 			}
 			if (this.printTDPSteps)
 			{
-				System.out.println("[" + s.getUniqueID() + "]");
+				String additionalInfo = s.isIfStmt()? " [if]" : "";
+				//System.out.println("[" + s.getUniqueID() + "]" + additionalInfo);
+				if (s.isFirstStmtOfMethod())
+				{
+					System.out.println(".method " + s.getContainingMethod().getSignature());
+				}
+				System.out.println("  " + s.getSmaliStmt() + additionalInfo);
+				if (s.isThrowStmt() || s.isReturnStmt())
+				{
+					System.out.println(".endmth " + s.getContainingMethod().getSignature());
+				}
 			}
 // Action: add current statement into execution log
 			for (ToDoPath tdP : result)
@@ -528,11 +650,11 @@ public class SymbolicExecution {
 		{
 			if (!tdP.isLegit)
 				continue;
-/*			if (nextStmtID == tdP.endingStmtID && tdP.isLegit)
+			if (nextStmtID == tdP.endingStmtID && tdP.isLegit)
 				tdP.execLog.add(m.getSignature() + ":" + nextStmtID);
 			if (tdP.endingStmtID != -1 && tdP.execLog.get(tdP.execLog.size()-1).endsWith(":"+tdP.endingStmtID))
 				tdP.isLegit = false;
-*/
+
 			for (String choice : tdP.branchChoices)
 			{
 				String stmtInfo = choice.split(",")[0];
