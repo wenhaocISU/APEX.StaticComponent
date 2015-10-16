@@ -275,12 +275,37 @@ public class StaticApp {
 		return result;
 	}
 
+	
+	/**
+	 * Find statement using method signature and bytecode index
+	 * @return find the StaticStmt object
+	 * @param stmtInfo statement information with format of <method signature>:<statement id>, e.g., "Lcom/example/MainActivity;->test()V:23"
+	 * 
+	 * */
 	public StaticStmt getStmt(String stmtInfo) {
 		String methodSig = stmtInfo.split(":")[0];
 		int stmtID = Integer.parseInt(stmtInfo.split(":")[1]);
 		StaticMethod m = this.getMethod(methodSig);
 		if (stmtID >= 0 && m != null && m.getStatements().size() > stmtID)
 			return m.getStatements().get(stmtID);
+		return null;
+	}
+	
+	/**
+	 * Find statement using class name and source line number
+	 * @return find the StaticStmt object
+	 * @param stmtInfo statement information with format of <class name>:<line number>, e.g., "com.example.MainActivity:187"
+	 * 
+	 * */
+	public StaticStmt getStmtByLineNumber(String stmtInfo)
+	{
+		String className = stmtInfo.split(":")[0];
+		int lineNumber = Integer.parseInt(stmtInfo.split(":")[1]);
+		StaticClass c = this.getClassByJavaName(className);
+		if (c != null)
+		{
+			return c.getStmtWithLineNumber(lineNumber);
+		}
 		return null;
 	}
 }

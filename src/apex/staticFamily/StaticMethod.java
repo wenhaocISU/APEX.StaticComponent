@@ -60,6 +60,18 @@ public class StaticMethod {
 		return null;
 	}
 	
+	public StaticStmt getStatementByLineNumber(int lineNumber)
+	{
+		if (lineNumber < 1)
+			return null;
+		for (StaticStmt s : this.statements)
+		{
+			if (s.getSourceLineNumber() == lineNumber)
+				return s;
+		}
+		return null;
+	}
+	
 	private void parseParams()
 	{
 		String subSig = getSubSignature();
@@ -650,5 +662,10 @@ public class StaticMethod {
 			}
 		}
 		return null;
+	}
+	
+	public String toString()
+	{
+		return this.getSignature();
 	}
 }

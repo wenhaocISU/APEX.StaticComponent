@@ -359,6 +359,17 @@ public class StaticStmt {
 
 	}
 	
+	public boolean inSameBlockWith(StaticStmt s)
+	{
+		if (s == null)
+			return false;
+		if (!this.getContainingMethod().equals(s.getContainingMethod()))
+			return false;
+		if (!this.getBlockName().equals(s.getBlockName()))
+			return false;
+		return true;
+	}
+	
 	public String getInvokeSignature()
 	{
 		if (!this.isInvokeStmt())

@@ -336,5 +336,15 @@ public class StaticClass {
 		}
 		return null;
 	}
+
+	public StaticStmt getStmtWithLineNumber(int lineNumber) {
+		for (StaticMethod m : this.methods)
+		{
+			StaticStmt s = m.getStatementByLineNumber(lineNumber);
+			if (s != null)
+				return s;
+		}
+		return null;
+	}
 	
 }
