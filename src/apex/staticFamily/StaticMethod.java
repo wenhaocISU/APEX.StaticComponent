@@ -263,7 +263,7 @@ public class StaticMethod {
 	
 	public void instrument(StaticApp staticApp, Instrumentor instrumentor)
 	{
-		if (!this.throwsException())
+/*		if (!this.throwsException())
 		{
 			for (StaticStmt s : this.statements)
 			{
@@ -273,6 +273,10 @@ public class StaticMethod {
 		else
 		{
 			instrumentor.instrumentEveryStmt(staticApp, this);
+		}*/
+		for (StaticStmt s : this.statements)
+		{
+			instrumentor.instrumentStmt(staticApp, s);
 		}
 	}
 	
@@ -286,7 +290,7 @@ public class StaticMethod {
 	{
 		if (this.localRegisterCount < 0)
 			return "none";
-		
+
 		// use added register if we can
 		if (this.localRegisterCount+this.getParamRegCount() < 15)
 		{
@@ -335,7 +339,9 @@ public class StaticMethod {
 				continue;
 			if (!s.getRegsToRead().contains(write))
 			{
-				return write;
+				int index = Integer.parseInt(write.substring(1));
+				if (index < 16)
+					return write;
 			}
 		}
 		
@@ -348,6 +354,9 @@ public class StaticMethod {
 		ArrayList<ToDoPath> tdP = sex.generateToDoPaths(this, 0, s.getStatementID(), false, s.isInCatchBlock());
 		for (ToDoPath p : tdP)
 		{
+			if (p.getExecutionLog().size() > 500)
+				continue;
+			//sex.printStmtInfo = true;
 			PathSummary ps = sex.doFullSymbolic(new VMContext(staticApp), p, this.getSignature(), -1, false);
 			MethodContext mc = ps.getVMContext().getRecentMethodContext();
 			// find a register that is:

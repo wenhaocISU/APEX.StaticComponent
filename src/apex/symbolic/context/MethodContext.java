@@ -327,7 +327,7 @@ public class MethodContext {
 						result.add(right.getChild(i).clone());
 					}
 				}
-				String type = right.getChild(2).getContent();
+				String type = right.getChildCount()>2? right.getChild(2).getContent() : "";
 				LiteralValue v = new LiteralValue(result, type);
 				this.writeRegister(left.getContent(), v);
 			}
@@ -347,7 +347,7 @@ public class MethodContext {
 		{
 			Thrower.throwException(s.getBytecodeOperator() + " got non-SymbolicArray object array at " + s.getUniqueID(), this.vm);
 		}
-		return (SymbolicArray)arrayObj;
+		return (SymbolicArray) arrayObj;
 	}
 	
 	public void modelInvokeStatement(StaticStmt s)

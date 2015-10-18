@@ -23,6 +23,7 @@ public class SymbolicExecution {
 	public boolean printVMStatus = false;
 	public boolean printTDPSteps = false;
 	public static int MaxPathCount = 1000;
+	public static int MaxPathLength = 1000;
 	
 	public SymbolicExecution(StaticApp staticApp)
 	{
@@ -325,7 +326,7 @@ public class SymbolicExecution {
 		for (int i = 0; i < results.size(); i++)
 		{
 			ToDoPath p = results.get(i);
-			p.generateExecLogFromOrders(staticApp);
+			p.generateExecLogFromOrders(staticApp, logcat);
 			if (i == 0)
 			{
 				result = p.clone();
@@ -435,7 +436,7 @@ public class SymbolicExecution {
 		Stack<Integer> returnIDStack = new Stack<Integer>();
 		methodStack.push(p.m);
 		int nextStmtID = 0;
-		while (!methodStack.isEmpty())
+		while (!methodStack.isEmpty() && p.execLog.size() < MaxPathLength)
 		{
 			StaticStmt s = methodStack.peek().getStatement(nextStmtID++);
 			if (this.printTDPSteps)
@@ -705,7 +706,7 @@ public class SymbolicExecution {
 				continue;
 			if (nextStmtID == tdP.endingStmtID && tdP.isLegit)
 				tdP.execLog.add(m.getSignature() + ":" + nextStmtID);
-			if (tdP.endingStmtID != -1 && tdP.execLog.get(tdP.execLog.size()-1).endsWith(":"+tdP.endingStmtID))
+			if (tdP.endingStmtID != -1 && !tdP.execLog.get(tdP.execLog.size()-1).endsWith(":"+tdP.endingStmtID))
 				tdP.isLegit = false;
 
 			for (String choice : tdP.branchChoices)

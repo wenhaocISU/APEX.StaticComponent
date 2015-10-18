@@ -16,19 +16,19 @@ import apex.staticFamily.StaticMethod;
 import apex.staticFamily.StaticStmt;
 import apex.symbolic.SymbolicExecutionBlacklist;
 
-public class CallGraphBuilder {
+public class CallGraph {
 
 	public StaticApp staticApp;
 	public DirectedGraph<StaticMethod, DefaultEdge> callGraph;
 	ConnectivityInspector<StaticMethod, DefaultEdge> inspector;
 	
-	public CallGraphBuilder(StaticApp staticApp)
+	public CallGraph(StaticApp staticApp)
 	{
 		this.staticApp = staticApp;
-		this.generateCallGraph();
+		this.generate();
 	}
 	
-	public List<StaticMethod> getSources()
+	public List<StaticMethod> getSourceMethods()
 	{
 		List<StaticMethod> result = new ArrayList<StaticMethod>();
 		for (StaticMethod m : callGraph.vertexSet())
@@ -39,7 +39,7 @@ public class CallGraphBuilder {
 		return result;
 	}
 	
-	public List<StaticMethod> getSources(StaticMethod m)
+	public List<StaticMethod> getSourceMethods(StaticMethod m)
 	{
 		List<StaticMethod> candidates = new ArrayList<StaticMethod>();
 		if (inspector == null)
@@ -66,7 +66,7 @@ public class CallGraphBuilder {
 		return candidates;
 	}
 	
-	public void generateCallGraph()
+	public void generate()
 	{
 		if (callGraph != null)
 			return;

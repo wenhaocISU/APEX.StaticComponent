@@ -43,7 +43,12 @@ public class SymbolicArray extends SymbolicObject{
 			{
 				lengthStr = initialArrayEx.getChild(0).getChild(0).getContent();
 			}
-			this.length = Integer.parseInt(initialArrayEx.getChild(0).getContent());
+			try
+			{	// this length might not be a number, it could be something like: ("BattleStat".length)
+				this.length = Integer.parseInt(initialArrayEx.getChild(0).getContent());
+			}
+			catch (Exception e)
+			{}
 			this.elementType = initialArrayEx.getChild(1).getContent();
 		}
 	}

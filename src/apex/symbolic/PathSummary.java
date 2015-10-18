@@ -71,6 +71,17 @@ public class PathSummary {
 		return result;
 	}
 	
+	public boolean containsStmt(StaticStmt s)
+	{
+		for (String ex : this.executionLog)
+		{
+			String stmtInfo = ex.contains(",")? ex.substring(0, ex.indexOf(",")) : ex;
+			if (s.getUniqueID().equals(stmtInfo))
+				return true;
+		}
+		return false;
+	}
+	
 	public ArrayList<String> getSourceCodeLog()
 	{
 		ArrayList<String> result = new ArrayList<String>();

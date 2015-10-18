@@ -18,7 +18,8 @@ public class SymbolicExecutionBlacklist {
 			"Lorg/ksoap2/*",
 			"Lorg/kxml2/*",
 			"Lorg/xmlpull/*",
-			"Lnet/mandaria/tippytipperlibrary/activities/Total$5;"
+			"Lnet/mandaria/tippytipperlibrary/activities/Total$5;",
+			"Lcom/google/gson/*"
 	));
 	
 	

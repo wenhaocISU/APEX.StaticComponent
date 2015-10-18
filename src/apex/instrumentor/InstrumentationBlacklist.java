@@ -19,14 +19,18 @@ public class InstrumentationBlacklist {
 			"Lorg/ksoap2/*",
 			"Lorg/kxml2/*",
 			"Lorg/xmlpull/*",
-			"Lnet/mandaria/tippytipperlibrary/activities/Total$5;"
+			"Lnet/mandaria/tippytipperlibrary/activities/Total$5;",
+			"Lcom/google/gson/*"
 	));
 	
 	
 
 	
 	public static ArrayList<String> methods = new ArrayList<String>(Arrays.asList(
-			"*doInBackground([Ljava/lang/Void;)Ljava/lang/Integer;"
+			"*doInBackground([Ljava/lang/Void;)Ljava/lang/Integer;",
+			"Lcom/example/battlestat/NanoHTTPD;->serveAssets(Ljava/lang/String;Ljava/util/Properties;)Lcom/example/battlestat/NanoHTTPD$Response;",
+			"Lcom/example/battlestat/NanoHTTPD;->serveFile(Ljava/lang/String;Ljava/util/Properties;Ljava/io/File;Z)Lcom/example/battlestat/NanoHTTPD$Response;",
+			"Lcom/example/battlestat/NanoHTTPD$HTTPSession;->run()V"
 			//"Lnet/mandaria/tippytipperlibrary/services/TipCalculatorService;->calculateTip()V",
 			//"Lnet/mandaria/tippytipperlibrary/services/TipCalculatorService;->splitBill(I)V"
 	));

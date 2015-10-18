@@ -237,7 +237,7 @@ public class VMContext {
 		String rightReg = cond.getChild(1).getContent();
 		MethodContext mc = this.methods.peek();
 		
-		// Left part
+		// Left part can only be a register
 		Value leftV = mc.getRegister(leftReg).getValue();
 		if (leftV instanceof LiteralValue)
 		{
@@ -246,10 +246,18 @@ public class VMContext {
 		else
 		{
 			ReferenceValue refV = (ReferenceValue) leftV;
-			result.add(this.getObject(refV.getAddress()).getExpression().clone());
+			SymbolicObject lobj = this.getObject(refV.getAddress());
+			if (lobj == null)
+			{
+				result.add("null");
+			}
+			else
+			{
+				result.add(lobj.getExpression().clone());
+			}
 		}
 		
-		// Right part. Could be 0/null, or a register
+		// Right part. Could be 0/null, or a register, or a number(from switch statement)
 		if (rightReg.equals("0"))
 		{
 			if ((leftV instanceof ReferenceValue) || leftV.getType().equals("Ljava/lang/String;"))
@@ -257,9 +265,10 @@ public class VMContext {
 			else
 				result.add("0");
 		}
-		else
+		else if (rightReg.startsWith("v") || rightReg.startsWith("p"))	// registers
 		{
-			Value rightV = mc.getRegister(rightReg).getValue();
+			Register rreg = mc.getRegister(rightReg);
+			Value rightV = rreg.getValue();
 			if (rightV instanceof LiteralValue)
 			{
 				result.add(rightV.getExpression().clone());
@@ -267,8 +276,20 @@ public class VMContext {
 			else
 			{
 				ReferenceValue refV = (ReferenceValue) rightV;
-				result.add(this.getObject(refV.getAddress()).getExpression().clone());
+				SymbolicObject obj = this.getObject(refV.getAddress());
+				if (obj == null)
+				{
+					result.add("null");
+				}
+				else
+				{
+					result.add(obj.getExpression().clone());
+				}
 			}
+		}
+		else	// numbers
+		{
+			result.add(rightReg);
 		}
 		return result;
 	}
@@ -381,8 +402,11 @@ public class VMContext {
 			{
 				this.invokeParams = s.getInvokeParameters();
 			}
-			MethodContext mc = this.methods.peek();
-			mc.applyStatement(s);
+			if (!this.methods.isEmpty())
+			{
+				MethodContext mc = this.methods.peek();
+				mc.applyStatement(s);
+			}
 		}
 	}
 	
